@@ -11,7 +11,8 @@ torch.autograd.set_detect_anomaly(True)
 from torchsummary import summary
 
 # 替换为原始字符串避免 warning
-data_root = r'E:\Datasets\CIFAR10\data'
+root = r'../'
+data_root = os.path.join(root, r'Datasets/CIFAR10/data')
 
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
@@ -75,5 +76,5 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), './best_resnet18_laplacian_cifar10.pth')
+            torch.save(model.state_dict(), '../HVS_for_better_NN_pth/best_resnet18_laplacian_cifar10.pth')
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")

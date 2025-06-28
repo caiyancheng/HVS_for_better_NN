@@ -10,8 +10,8 @@ from torchsummary import summary
 # 设置设备
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# 数据路径（请根据你本地环境修改）
-data_root = r'E:\Datasets\CIFAR10\data'
+root = r'../'
+data_root = os.path.join(root, r'Datasets/CIFAR10/data')
 
 # 定义测试集数据预处理
 transform_test = transforms.Compose([
@@ -25,7 +25,7 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 def test_best_model():
     # 创建模型并加载权重
     model = CustomResNet18(num_classes=10).to(device)
-    checkpoint_path = './best_resnet18_laplacian_cifar10.pth'
+    checkpoint_path = os.path.join(root, r'HVS_for_better_NN_pth/best_resnet18_laplacian_cifar10.pth')
 
     if not os.path.exists(checkpoint_path):
         print(f"❌ Checkpoint {checkpoint_path} not found.")

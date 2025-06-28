@@ -5,13 +5,13 @@ import torch.nn as nn
 from torchvision.models import resnet18
 import os
 
+root = r'../'
 # 路径配置
-data_root = r'E:\Datasets\CIFAR10\data'
-model_path = './best_resnet18_cifar10_224.pth'
+data_root = os.path.join(root, r'Datasets/CIFAR10/data')
+model_path = os.path.join(root, r'HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample.pth')
 
 # 数据预处理（测试用）
 transform_test = transforms.Compose([
-    transforms.Resize(224),
     transforms.ToTensor(),
 ])
 
@@ -24,7 +24,9 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # 定义模型
 model = resnet18(weights=None)
-model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 类别数
+model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 3x3 conv
+model.maxpool = nn.Identity()  # 取消 maxpool
+model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = model.to(device)
 
 # 加载模型权重
