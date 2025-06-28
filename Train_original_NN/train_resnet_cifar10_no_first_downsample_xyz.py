@@ -57,10 +57,10 @@ transform_test = transforms.Compose([
 ])
 
 
-trainset = torchvision.datasets.CIFAR10(root=data_root, train=True, download=True, transform=transform_train)
+trainset = torchvision.datasets.CIFAR10(root=data_root, train=True, download=False, transform=transform_train)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
 
-testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=True, transform=transform_test)
+testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=False, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -70,7 +70,7 @@ model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  
 model.maxpool = nn.Identity()  # 取消 maxpool
 model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = model.to(device)
-summary(model, input_size=(3, 32, 32))
+# summary(model, input_size=(3, 32, 32))
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
