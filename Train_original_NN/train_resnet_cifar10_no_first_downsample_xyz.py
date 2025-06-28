@@ -8,6 +8,8 @@ import os
 from tqdm import tqdm
 from torchsummary import summary
 
+peak_luminance = 100.0
+
 def srgb_to_linear_rgb(srgb):
     """sRGB 转线性 RGB (gamma 解码)，输入 [0, 1]，输出 [0, 1]"""
     threshold = 0.04045
@@ -48,12 +50,12 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    RGBtoXYZTransform(peak_luminance=500.0)
+    RGBtoXYZTransform(peak_luminance=peak_luminance)
 ])
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    RGBtoXYZTransform(peak_luminance=500.0)
+    RGBtoXYZTransform(peak_luminance=peak_luminance)
 ])
 
 
@@ -113,7 +115,7 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), '../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_xyz.pth')
+            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_xyz_pl{peak_luminance}.pth')
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
 # 将原本训练的RGB空间变为线性XYZ空间
