@@ -8,6 +8,8 @@ import os
 from tqdm import tqdm
 from torchsummary import summary
 
+peak_luminance = 100.0
+
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
   [1.000000000000000,   1.000000000000000,                   0],
@@ -74,12 +76,12 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    RGBtoDKLTransform(peak_luminance=500.0)  # ✅ DKL 替换 XYZ
+    RGBtoDKLTransform(peak_luminance=peak_luminance)  # ✅ DKL 替换 XYZ
 ])
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    RGBtoDKLTransform(peak_luminance=500.0)
+    RGBtoDKLTransform(peak_luminance=peak_luminance)
 ])
 
 trainset = torchvision.datasets.CIFAR10(root=data_root, train=True, download=False, transform=transform_train)
@@ -138,7 +140,7 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), '../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl.pth')
+            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_pl{peak_luminance}.pth')
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
 # 将原本训练的RGB空间变为线性XYZ空间
