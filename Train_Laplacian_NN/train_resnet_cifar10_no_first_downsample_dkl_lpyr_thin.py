@@ -135,7 +135,7 @@ class PyramidResNet18(nn.Module):
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
-        self.bn1 = base.bn1 #nn.BatchNorm2d(self.channel[0]) ###卧槽！反而+0.4%的正向增长
+        self.bn1 = nn.BatchNorm2d(self.channel[0]) ###卧槽！反而+0.4%的正向增长
         self.relu = base.relu
         self.maxpool = base.maxpool
         # self.layer1 = base.layer1
