@@ -146,11 +146,12 @@ model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
 
 def train(epoch):
+    torch.cuda.empty_cache()
     model.train()
     # lpyr = laplacian_pyramid_simple(resolution[0], resolution[1], display_ppd, device)
-    lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
     running_loss = 0.0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
@@ -164,13 +165,15 @@ def train(epoch):
     print(f"[Epoch {epoch}] Training Loss: {running_loss / len(trainloader):.3f}")
 
 def test(epoch):
+    torch.cuda.empty_cache()
     model.eval()
     correct = 0
     total = 0
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
+            lpyr_results = lpyr.decompose(inputs)
+            outputs = model(inputs, lpyr_results)
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
