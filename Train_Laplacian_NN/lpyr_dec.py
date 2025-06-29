@@ -406,14 +406,15 @@ class laplacian_pyramid_simple(lpyr_dec):
     def __init__(self, W, H, ppd, device):
         super().__init__(W, H, ppd, device)
 
-    def decompose(self, image):
+    def decompose(self, image, levels=None):
         """
         Args:
             image: Tensor of shape [B, C, H, W]
         Returns:
             lpyr: list of Laplacian pyramid layers, each of shape [B, C, H_i, W_i]
         """
-        levels = self.height + 1
+        if levels is None:
+            levels = self.height + 1
         kernel_a = 0.4
 
         # Build Gaussian pyramid

@@ -10,11 +10,10 @@ from torchsummary import summary
 import math
 from lpyr_dec import *
 import torch.nn.functional as F
-from torchvision.models.resnet import BasicBlock
 
 # Viewing Condition Setting
 peak_luminance = 500.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_thin_pl{peak_luminance}_3.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_5.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
@@ -109,48 +108,31 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True
 testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=False, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
-def make_layer(block, in_planes, out_planes, blocks, stride=1):
-    """自定义layer构造函数以兼容不同通道数"""
-    downsample = None
-    if stride != 1 or in_planes != out_planes:
-        downsample = nn.Sequential(
-            nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False),
-            nn.BatchNorm2d(out_planes),
-        )
 
-    layers = []
-    layers.append(block(in_planes, out_planes, stride, downsample))
-    for _ in range(1, blocks):
-        layers.append(block(out_planes, out_planes))
-
-    return nn.Sequential(*layers)
 
 class PyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
-        self.channel = [64, 64, 128, 256, 512] #最初是[64, 64, 128, 256, 512]
         # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
-        base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
+        base.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
-        self.bn1 = base.bn1 #nn.BatchNorm2d(self.channel[0]) ###卧槽！反而+0.4%的正向增长
+        self.bn1 = base.bn1
         self.relu = base.relu
         self.maxpool = base.maxpool
-        # self.layer1 = base.layer1
-
-        self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], blocks=2, stride=1)
-        self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=2)
-        self.layer3 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=2)
+        self.layer1 = base.layer1
+        self.layer2 = base.layer2
+        self.layer3 = base.layer3
         self.layer4 = base.layer4
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
 
-        self.inject1 = nn.Conv2d(3, self.channel[0], 1)  # 将pyr[1]编码为 gating
-        self.inject2 = nn.Conv2d(3, self.channel[1], 1)
-        self.inject3 = nn.Conv2d(3, self.channel[2], 1)
-        self.inject4 = nn.Conv2d(3, self.channel[3], 1)
+        self.inject1 = nn.Conv2d(3, 64, 1)  # 将pyr[1]编码为 gating
+        self.inject2 = nn.Conv2d(3, 64, 1)
+        self.inject3 = nn.Conv2d(3, 128, 1)
+        self.inject4 = nn.Conv2d(3, 256, 1)
 
         self.gate = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
@@ -158,29 +140,29 @@ class PyramidResNet18(nn.Module):
         )
 
     def forward(self, x):
-        _, pyr = lpyr.decompose(x, levels=4)
         # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
         # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
         # x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
         # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
         # x = self.avgpool(x)
+        _, pyr = lpyr.decompose(x)
 
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        feat1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
+        feat1 = self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))
         alpha1 = self.gate(feat1)
         x = self.layer1(x * alpha1) #这样操作似乎没有任何的精度损失(-0.15%)
         # x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0])))) #直接使用pyr[0]会导致-0.9%左右的精度损失
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))) #直接使用pyr[1]会导致-1.5%左右的精度损失
-        feat2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
+        feat2 = self.inject2(F.interpolate(pyr[2], size=x.shape[-2:]))
         alpha2 = self.gate(feat2)
         x = self.layer2(x * alpha2)
 
-        feat3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
+        feat3 = self.inject3(F.interpolate(pyr[3], size=x.shape[-2:]))
         alpha3 = self.gate(feat3)
         x = self.layer3(x * alpha3)
 
-        feat4 = self.inject4(F.interpolate(pyr[3], size=x.shape[-2:]))
+        feat4 = self.inject4(F.interpolate(pyr[4], size=x.shape[-2:]))
         alpha4 = self.gate(feat4)
         x = self.layer4(x * alpha4)
         x = self.avgpool(x)
@@ -216,8 +198,9 @@ def train(epoch):
     running_loss = 0.0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
+        gpyr_results, lpyr_results = lpyr.decompose(inputs)
         optimizer.zero_grad()
-        outputs = model(inputs)
+        outputs = model(inputs, lpyr_results)
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
@@ -232,7 +215,8 @@ def test(epoch):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
+            gpyr_results, lpyr_results = lpyr.decompose(inputs)
+            outputs = model(inputs, lpyr_results)
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
