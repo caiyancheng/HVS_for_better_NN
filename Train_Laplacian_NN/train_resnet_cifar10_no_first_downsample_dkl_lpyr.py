@@ -171,7 +171,7 @@ def train(epoch):
         inputs, targets = inputs.to(device), targets.to(device)
         gpyr_results, lpyr_results = lpyr.decompose(inputs)
         optimizer.zero_grad()
-        outputs = model(inputs, gpyr_results)
+        outputs = model(inputs, lpyr_results)
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
@@ -187,7 +187,7 @@ def test(epoch):
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
             gpyr_results, lpyr_results = lpyr.decompose(inputs)
-            outputs = model(inputs, gpyr_results)
+            outputs = model(inputs, lpyr_results)
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
