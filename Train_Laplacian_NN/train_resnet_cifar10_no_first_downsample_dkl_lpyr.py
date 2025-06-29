@@ -142,9 +142,9 @@ class PyramidResNet18(nn.Module):
         # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
         # x = self.avgpool(x)
 
-        # x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0]))))
-        x = self.layer1(x)
+        x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
+        # x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0])))) #直接使用pyr[0]会导致-0.9%左右的精度损失
+        x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
