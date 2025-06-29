@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 # Viewing Condition Setting
 peak_luminance = 500.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_3.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_4.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
@@ -25,7 +25,7 @@ display_size_m = (ar*height_mm/1000, height_mm/1000)
 pix_deg = 2 * math.degrees(math.atan(0.5 * display_size_m[0] / resolution[0] / viewing_distance_meters))
 display_ppd = 1 / pix_deg
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
 lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
 
 # --- ✅ DKL转换相关矩阵 ---
@@ -133,11 +133,17 @@ class PyramidResNet18(nn.Module):
 
     def forward(self, x, pyr):
         # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
+        # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
+        # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
+        # x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
+        # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
+        # x = self.avgpool(x)
+
         x = self.conv1(x)
-        x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
-        x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
-        x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
-        x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
         x = self.avgpool(x)
         return self.fc(torch.flatten(x, 1))
 
