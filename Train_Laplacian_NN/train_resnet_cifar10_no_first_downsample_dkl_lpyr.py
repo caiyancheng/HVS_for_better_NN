@@ -129,18 +129,32 @@ class PyramidResNet18(nn.Module):
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
 
-        # self.inject1 = nn.Conv2d(3, 64, 1)
+        # inject layers for pyramid features
+        self.inject1 = nn.Conv2d(3, 64, 1)
         self.inject2 = nn.Conv2d(3, 64, 1)
         self.inject3 = nn.Conv2d(3, 128, 1)
         self.inject4 = nn.Conv2d(3, 256, 1)
 
-        self.inject1 = nn.Conv2d(3, 64, 1)  # 将pyr[1]编码为 gating
+        # gate modules for each layer
         self.gate1 = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
-            nn.Sigmoid()  # 输出在 (0,1)，用于门控
+            nn.AdaptiveAvgPool2d(1),
+            nn.Sigmoid()
+        )
+        self.gate2 = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Sigmoid()
+        )
+        self.gate3 = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Sigmoid()
+        )
+        self.gate4 = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Sigmoid()
         )
 
-    def forward(self, x, pyr):
+
+def forward(self, x, pyr):
         # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
         # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
@@ -148,17 +162,25 @@ class PyramidResNet18(nn.Module):
         # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
         # x = self.avgpool(x)
 
-        x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        gate_feat = self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))  # -> [B,64,H,W]
-        alpha = self.gate1(gate_feat)  # -> [B,64,1,1]
-        x = self.layer1(x * alpha)
-        # x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0])))) #直接使用pyr[0]会导致-0.9%左右的精度损失
-        # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))) #直接使用pyr[1]会导致-1.5%左右的精度损失
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        feat1 = self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))
+        alpha1 = self.gate1(feat1)
+        x = self.layer1(x * alpha1)
+
+        feat2 = self.inject2(F.interpolate(pyr[2], size=x.shape[-2:]))
+        alpha2 = self.gate2(feat2)
+        x = self.layer2(x * alpha2)
+
+        feat3 = self.inject3(F.interpolate(pyr[3], size=x.shape[-2:]))
+        alpha3 = self.gate3(feat3)
+        x = self.layer3(x * alpha3)
+
+        feat4 = self.inject4(F.interpolate(pyr[4], size=x.shape[-2:]))
+        alpha4 = self.gate4(feat4)
+        x = self.layer4(x * alpha4)
+
         x = self.avgpool(x)
-        return self.fc(torch.flatten(x, 1))
+        x = torch.flatten(x, 1)
+        return self.fc(x)
 
 
 # model = resnet18(weights=None)
