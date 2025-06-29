@@ -138,7 +138,7 @@ class PyramidResNet18(nn.Module):
         self.relu = base.relu
         self.maxpool = base.maxpool
         # self.layer1 = base.layer1
-        self.layer1 = make_layer(BasicBlock, 32, 32, blocks=2, stride=1)
+        self.layer1 = make_layer(BasicBlock, 32, 64, blocks=2, stride=1)
         self.layer2 = base.layer2
         self.layer3 = base.layer3
         self.layer4 = base.layer4
