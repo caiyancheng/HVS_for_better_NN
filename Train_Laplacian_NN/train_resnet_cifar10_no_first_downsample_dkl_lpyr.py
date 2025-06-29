@@ -25,7 +25,7 @@ display_size_m = (ar*height_mm/1000, height_mm/1000)
 pix_deg = 2 * math.degrees(math.atan(0.5 * display_size_m[0] / resolution[0] / viewing_distance_meters))
 display_ppd = 1 / pix_deg
 
-device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
 
 # --- ✅ DKL转换相关矩阵 ---
