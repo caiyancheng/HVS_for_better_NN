@@ -142,7 +142,7 @@ class PyramidResNet18(nn.Module):
 
         self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], blocks=2, stride=1)
         self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=2)
-        self.layer3 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=2)
+        self.layer3 = make_layer(BasicBlock, self.channel[2], self.channel[3], blocks=2, stride=2)
         self.layer4 = base.layer4
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
