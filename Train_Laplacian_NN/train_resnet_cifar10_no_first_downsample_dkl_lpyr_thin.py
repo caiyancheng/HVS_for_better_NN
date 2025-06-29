@@ -14,7 +14,7 @@ from torchvision.models.resnet import BasicBlock
 
 # Viewing Condition Setting
 peak_luminance = 500.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_thin_pl{peak_luminance}_1.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_thin_pl{peak_luminance}_2.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
@@ -134,19 +134,19 @@ class PyramidResNet18(nn.Module):
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
-        self.bn1 = nn.BatchNorm2d(32)
+        self.bn1 = nn.BatchNorm2d(32) ###卧槽！反而+0.4%的正向增长
         self.relu = base.relu
         self.maxpool = base.maxpool
         # self.layer1 = base.layer1
-        self.layer1 = make_layer(BasicBlock, 32, 64, blocks=2, stride=1)
-        self.layer2 = base.layer2
+        self.layer1 = make_layer(BasicBlock, 32, 32, blocks=2, stride=1)
+        self.layer2 = make_layer(BasicBlock, 32, 128, blocks=2, stride=1)
         self.layer3 = base.layer3
         self.layer4 = base.layer4
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
 
         self.inject1 = nn.Conv2d(3, 32, 1)  # 将pyr[1]编码为 gating
-        self.inject2 = nn.Conv2d(3, 64, 1)
+        self.inject2 = nn.Conv2d(3, 32, 1)
         self.inject3 = nn.Conv2d(3, 128, 1)
         self.inject4 = nn.Conv2d(3, 256, 1)
 
