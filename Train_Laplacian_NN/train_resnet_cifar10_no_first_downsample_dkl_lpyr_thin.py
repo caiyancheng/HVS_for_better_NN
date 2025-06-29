@@ -194,7 +194,7 @@ class PyramidResNet18(nn.Module):
 # model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = PyramidResNet18()
 model = model.to(device)
-summary(model, input_size=(3, 32, 32))
+# summary(model, input_size=(3, 32, 32))
 
 if os.path.isfile(checkpoint_path) and load_pretrained_weights:
     print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
