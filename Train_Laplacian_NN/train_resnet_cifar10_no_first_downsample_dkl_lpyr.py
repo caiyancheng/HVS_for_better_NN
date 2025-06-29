@@ -13,6 +13,8 @@ import torch.nn.functional as F
 
 # Viewing Condition Setting
 peak_luminance = 100.0
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_2.pth'
+load_pretrained_weights = True
 resolution = [3840,2160]
 diagonal_size_inches = 55
 viewing_distance_meters = 1
@@ -143,6 +145,13 @@ class PyramidResNet18(nn.Module):
 # model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = PyramidResNet18()
 model = model.to(device)
+
+if os.path.isfile(checkpoint_path) and load_pretrained_weights:
+    print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
+    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+else:
+    print("No pretrained weights found, training from scratch.")
+
 # summary(model, input_size=(3, 32, 32))
 
 criterion = nn.CrossEntropyLoss()
@@ -192,7 +201,7 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_2.pth')
+            torch.save(model.state_dict(), checkpoint_path)
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
 # 将原本训练的RGB空间变为线性XYZ空间
