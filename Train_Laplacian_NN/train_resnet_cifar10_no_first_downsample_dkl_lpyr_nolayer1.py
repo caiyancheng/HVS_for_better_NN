@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 # Viewing Condition Setting
 peak_luminance = 500.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_5.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_nolayer1_pl{peak_luminance}_1.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
@@ -109,50 +109,38 @@ testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=Fal
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
 
-
-class PyramidResNet18(nn.Module):
+class SlimPyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
-        # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
-        base.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
-        base.maxpool = nn.Identity()
 
-        self.conv1 = base.conv1
-        self.bn1 = base.bn1
+        # 调整conv1：直接输出128通道以对接layer2
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(128)
         self.relu = base.relu
-        self.maxpool = base.maxpool
-        self.layer1 = base.layer1
+        self.maxpool = nn.Identity()  # 保持原分辨率
+
+        # 完全跳过 layer1，使用 layer2 开始主干
         self.layer2 = base.layer2
         self.layer3 = base.layer3
         self.layer4 = base.layer4
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
 
-        self.inject1 = nn.Conv2d(3, 64, 1)  # 将pyr[1]编码为 gating
-        self.inject2 = nn.Conv2d(3, 64, 1)
-        self.inject3 = nn.Conv2d(3, 128, 1)
-        self.inject4 = nn.Conv2d(3, 256, 1)
+        # 重新设定 inject 层以匹配各层输入通道数
+        self.inject2 = nn.Conv2d(3, 128, 1)  # 对应 layer2 输入
+        self.inject3 = nn.Conv2d(3, 128, 1)  # layer3 输入通道仍为128
+        self.inject4 = nn.Conv2d(3, 256, 1)  # 对应 layer4 输入通道数
 
         self.gate = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
-            nn.Sigmoid()  # 输出在 (0,1)，用于门控
+            nn.AdaptiveAvgPool2d(1),
+            nn.Sigmoid()
         )
 
     def forward(self, x, pyr):
-        # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
-        # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
-        # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
-        # x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
-        # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
-        # x = self.avgpool(x)
-
+        # 注意：layer1 被完全省略
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        feat1 = self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))
-        alpha1 = self.gate(feat1)
-        x = self.layer1(x * alpha1) #这样操作似乎没有任何的精度损失(-0.15%)
-        # x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0])))) #直接使用pyr[0]会导致-0.9%左右的精度损失
-        # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))) #直接使用pyr[1]会导致-1.5%左右的精度损失
+
         feat2 = self.inject2(F.interpolate(pyr[2], size=x.shape[-2:]))
         alpha2 = self.gate(feat2)
         x = self.layer2(x * alpha2)
@@ -164,8 +152,8 @@ class PyramidResNet18(nn.Module):
         feat4 = self.inject4(F.interpolate(pyr[4], size=x.shape[-2:]))
         alpha4 = self.gate(feat4)
         x = self.layer4(x * alpha4)
-        x = self.avgpool(x)
 
+        x = self.avgpool(x)
         return self.fc(torch.flatten(x, 1))
 
 
@@ -173,7 +161,7 @@ class PyramidResNet18(nn.Module):
 # model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 3x3 conv
 # model.maxpool = nn.Identity()  # 取消 maxpool
 # model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
-model = PyramidResNet18()
+model = SlimPyramidResNet18()
 model = model.to(device)
 
 if os.path.isfile(checkpoint_path) and load_pretrained_weights:
