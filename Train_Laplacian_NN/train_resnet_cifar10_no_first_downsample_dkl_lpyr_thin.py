@@ -129,7 +129,7 @@ class PyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
-        self.channel = [64, 64, 128, 256, 512] #最初是[64, 64, 128, 256, 512]
+        self.channel = [32, 64, 128, 256, 512] #最初是[64, 64, 128, 256, 512] #64-93.90%
         # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
