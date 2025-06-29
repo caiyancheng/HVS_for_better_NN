@@ -115,10 +115,10 @@ class SlimPyramidResNet18(nn.Module):
         base = resnet18(weights=None)
 
         # 调整conv1：直接输出128通道以对接layer2
-        self.conv1 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(128)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = base.bn1
         self.relu = base.relu
-        self.maxpool = nn.Identity()  # 保持原分辨率
+        self.maxpool = base.maxpool
 
         # 完全跳过 layer1，使用 layer2 开始主干
         self.layer2 = base.layer2
@@ -128,7 +128,7 @@ class SlimPyramidResNet18(nn.Module):
         self.fc = nn.Linear(base.fc.in_features, num_classes)
 
         # 重新设定 inject 层以匹配各层输入通道数
-        self.inject2 = nn.Conv2d(3, 128, 1)  # 对应 layer2 输入
+        self.inject2 = nn.Conv2d(3, 64, 1)  # 对应 layer2 输入
         self.inject3 = nn.Conv2d(3, 128, 1)  # layer3 输入通道仍为128
         self.inject4 = nn.Conv2d(3, 256, 1)  # 对应 layer4 输入通道数
 
