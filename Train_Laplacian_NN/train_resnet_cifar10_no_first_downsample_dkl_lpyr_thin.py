@@ -129,33 +129,36 @@ class PyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
+        self.channel = [32, 32, 64, 256, 512] #最初是[64, 64, 128, 256, 512]
         # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
-        base.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
+        base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
-        self.bn1 = nn.BatchNorm2d(32) ###卧槽！反而+0.4%的正向增长
+        self.bn1 = nn.BatchNorm2d(self.channel[0]) ###卧槽！反而+0.4%的正向增长
         self.relu = base.relu
         self.maxpool = base.maxpool
         # self.layer1 = base.layer1
-        self.layer1 = make_layer(BasicBlock, 32, 32, blocks=2, stride=1)
-        self.layer2 = make_layer(BasicBlock, 32, 128, blocks=2, stride=1)
+
+        self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], blocks=2, stride=1)
+        self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=1)
         self.layer3 = base.layer3
         self.layer4 = base.layer4
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
 
-        self.inject1 = nn.Conv2d(3, 32, 1)  # 将pyr[1]编码为 gating
-        self.inject2 = nn.Conv2d(3, 32, 1)
-        self.inject3 = nn.Conv2d(3, 128, 1)
-        self.inject4 = nn.Conv2d(3, 256, 1)
+        self.inject1 = nn.Conv2d(3, self.channel[0], 1)  # 将pyr[1]编码为 gating
+        self.inject2 = nn.Conv2d(3, self.channel[1], 1)
+        self.inject3 = nn.Conv2d(3, self.channel[2], 1)
+        self.inject4 = nn.Conv2d(3, self.channel[3], 1)
 
         self.gate = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
             nn.Sigmoid()  # 输出在 (0,1)，用于门控
         )
 
-    def forward(self, x, pyr):
+    def forward(self, x):
+        _, pyr = lpyr.decompose(x)
         # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
         # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
@@ -191,6 +194,7 @@ class PyramidResNet18(nn.Module):
 # model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = PyramidResNet18()
 model = model.to(device)
+summary(model, input_size=(3, 32, 32))
 
 if os.path.isfile(checkpoint_path) and load_pretrained_weights:
     print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
@@ -212,9 +216,8 @@ def train(epoch):
     running_loss = 0.0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
-        gpyr_results, lpyr_results = lpyr.decompose(inputs)
         optimizer.zero_grad()
-        outputs = model(inputs, lpyr_results)
+        outputs = model(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
@@ -229,8 +232,7 @@ def test(epoch):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
-            gpyr_results, lpyr_results = lpyr.decompose(inputs)
-            outputs = model(inputs, lpyr_results)
+            outputs = model(inputs)
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
