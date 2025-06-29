@@ -155,32 +155,32 @@ class PyramidResNet18(nn.Module):
 
 
 def forward(self, x, pyr):
-        # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
-        # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
-        # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
-        # x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
-        # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
-        # x = self.avgpool(x)
+    # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
+    # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
+    # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
+    # x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
+    # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
+    # x = self.avgpool(x)
 
-        feat1 = self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))
-        alpha1 = self.gate1(feat1)
-        x = self.layer1(x * alpha1)
+    feat1 = self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))
+    alpha1 = self.gate1(feat1)
+    x = self.layer1(x * alpha1)
 
-        feat2 = self.inject2(F.interpolate(pyr[2], size=x.shape[-2:]))
-        alpha2 = self.gate2(feat2)
-        x = self.layer2(x * alpha2)
+    feat2 = self.inject2(F.interpolate(pyr[2], size=x.shape[-2:]))
+    alpha2 = self.gate2(feat2)
+    x = self.layer2(x * alpha2)
 
-        feat3 = self.inject3(F.interpolate(pyr[3], size=x.shape[-2:]))
-        alpha3 = self.gate3(feat3)
-        x = self.layer3(x * alpha3)
+    feat3 = self.inject3(F.interpolate(pyr[3], size=x.shape[-2:]))
+    alpha3 = self.gate3(feat3)
+    x = self.layer3(x * alpha3)
 
-        feat4 = self.inject4(F.interpolate(pyr[4], size=x.shape[-2:]))
-        alpha4 = self.gate4(feat4)
-        x = self.layer4(x * alpha4)
+    feat4 = self.inject4(F.interpolate(pyr[4], size=x.shape[-2:]))
+    alpha4 = self.gate4(feat4)
+    x = self.layer4(x * alpha4)
 
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        return self.fc(x)
+    x = self.avgpool(x)
+    x = torch.flatten(x, 1)
+    return self.fc(x)
 
 
 # model = resnet18(weights=None)
