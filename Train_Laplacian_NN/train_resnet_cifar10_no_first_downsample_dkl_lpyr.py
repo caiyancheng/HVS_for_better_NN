@@ -109,7 +109,8 @@ class PyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
-        base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
+        # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
+        base.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
@@ -126,7 +127,8 @@ class PyramidResNet18(nn.Module):
         self.inject4 = nn.Conv2d(3, 256, 1)
 
     def forward(self, x, pyr):
-        x = self.conv1(torch.cat([x, pyr[0]], dim=1))
+        # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
+        x = self.conv1(pyr[0])
         x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
         x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
         x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
@@ -190,7 +192,7 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}.pth')
+            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_2.pth')
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
 # 将原本训练的RGB空间变为线性XYZ空间
