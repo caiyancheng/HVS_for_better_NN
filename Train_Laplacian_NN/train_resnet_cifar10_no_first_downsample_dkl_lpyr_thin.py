@@ -129,7 +129,7 @@ class PyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
-        self.channel = [32, 32, 64, 256, 512] #最初是[64, 64, 128, 256, 512]
+        self.channel = [32, 32, 128, 256, 512] #最初是[64, 64, 128, 256, 512]
         # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
@@ -140,9 +140,9 @@ class PyramidResNet18(nn.Module):
         self.maxpool = base.maxpool
         # self.layer1 = base.layer1
 
-        self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], blocks=2, stride=1)
-        self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=1)
-        self.layer3 = make_layer(BasicBlock, self.channel[2], self.channel[3], blocks=2, stride=1)
+        self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], blocks=2, stride=3)
+        self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=3)
+        self.layer3 = base.layer3
         self.layer4 = base.layer4
         self.avgpool = base.avgpool
         self.fc = nn.Linear(base.fc.in_features, num_classes)
@@ -194,7 +194,7 @@ class PyramidResNet18(nn.Module):
 # model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = PyramidResNet18()
 model = model.to(device)
-# summary(model, input_size=(3, 32, 32))
+summary(model, input_size=(3, 32, 32))
 
 if os.path.isfile(checkpoint_path) and load_pretrained_weights:
     print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
