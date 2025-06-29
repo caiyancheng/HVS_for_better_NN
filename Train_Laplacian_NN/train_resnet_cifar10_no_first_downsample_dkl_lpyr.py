@@ -119,6 +119,9 @@ class PyramidResNet18(nn.Module):
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
+        self.bn1 = base.bn1
+        self.relu = base.relu
+        self.maxpool = base.maxpool
         self.layer1 = base.layer1
         self.layer2 = base.layer2
         self.layer3 = base.layer3
@@ -139,7 +142,7 @@ class PyramidResNet18(nn.Module):
         # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
         # x = self.avgpool(x)
 
-        x = self.conv1(x)
+        x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
