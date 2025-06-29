@@ -12,8 +12,8 @@ from lpyr_dec import *
 import torch.nn.functional as F
 
 # Viewing Condition Setting
-peak_luminance = 100.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_2.pth'
+peak_luminance = 500.0
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_lpyr_pl{peak_luminance}_3.pth'
 load_pretrained_weights = True
 resolution = [3840,2160]
 diagonal_size_inches = 55
@@ -24,6 +24,9 @@ height_mm = math.sqrt( (diagonal_size_inches*25.4)**2 / (1+ar**2) )
 display_size_m = (ar*height_mm/1000, height_mm/1000)
 pix_deg = 2 * math.degrees(math.atan(0.5 * display_size_m[0] / resolution[0] / viewing_distance_meters))
 display_ppd = 1 / pix_deg
+
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
 
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
@@ -105,7 +108,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True
 testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=False, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
 
 class PyramidResNet18(nn.Module):
     def __init__(self, num_classes=10):
@@ -157,7 +160,7 @@ else:
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
+
 
 def train(epoch):
     torch.cuda.empty_cache()
@@ -166,9 +169,9 @@ def train(epoch):
     running_loss = 0.0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
-        lpyr_results = lpyr.decompose(inputs)
+        gpyr_results, lpyr_results = lpyr.decompose(inputs)
         optimizer.zero_grad()
-        outputs = model(inputs, lpyr_results)
+        outputs = model(inputs, gpyr_results)
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
@@ -183,8 +186,8 @@ def test(epoch):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.to(device), targets.to(device)
-            lpyr_results = lpyr.decompose(inputs)
-            outputs = model(inputs, lpyr_results)
+            gpyr_results, lpyr_results = lpyr.decompose(inputs)
+            outputs = model(inputs, gpyr_results)
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()

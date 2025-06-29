@@ -432,4 +432,4 @@ class laplacian_pyramid_simple(lpyr_dec):
 
             lpyr.append(layer)
 
-        return lpyr
+        return gpyr, lpyr
