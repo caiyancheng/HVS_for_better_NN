@@ -30,7 +30,7 @@ display_ppd = 1 / pix_deg
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
-target_acc = 94.0
+target_acc = 93.9
 save_log = {}
 
 
@@ -232,7 +232,7 @@ def auto_tune_channels():
 
     for idx in range(len(best_channel)):
         current = best_channel[idx] * 2
-        print(f"\n🔍 正在优化第 {idx} 维 channel（当前值：{current}）")
+        print(f"\n🔍 正在优化第 {idx} 维 channel（当前值：{current//2}）")
         while current > 3:
             # 候选新值
             candidate = current // 2
@@ -285,6 +285,7 @@ def auto_tune_channels():
             else:
                 print(f" ❌ {candidate} 太小，保持 {current}")
                 break
+
 
     print("\n🎉 最优通道配置：", best_channel)
     return best_channel, acc_history
