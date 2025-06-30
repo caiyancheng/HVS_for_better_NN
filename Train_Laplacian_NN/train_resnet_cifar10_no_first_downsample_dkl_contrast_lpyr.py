@@ -12,7 +12,7 @@ from lpyr_dec import *
 import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock
 
-pyr_levels = 5
+pyr_levels = 4
 # Viewing Condition Setting
 peak_luminance = 500.0
 checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
@@ -157,7 +157,7 @@ class PyramidResNet18(nn.Module):
         self.inject4 = nn.Conv2d(3, self.channel[3], 1)
 
         self.gate = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
+            # nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
             nn.Sigmoid()  # 输出在 (0,1)，用于门控
         )
 
@@ -171,8 +171,8 @@ class PyramidResNet18(nn.Module):
         # x = self.avgpool(x)
 
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        feat1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
-        alpha1 = self.gate(feat1)
+        feat1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))  #[B, 64, 32, 32]
+        alpha1 = self.gate(feat1) #[B, 64, 1, 1]
         x = self.layer1(x * alpha1) #这样操作似乎没有任何的精度损失(-0.15%)
         # x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0])))) #直接使用pyr[0]会导致-0.9%左右的精度损失
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))) #直接使用pyr[1]会导致-1.5%左右的精度损失
