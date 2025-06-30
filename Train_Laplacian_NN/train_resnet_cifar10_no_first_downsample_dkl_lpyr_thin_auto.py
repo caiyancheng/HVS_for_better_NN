@@ -11,6 +11,8 @@ import math
 from lpyr_dec import *
 import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock
+import copy
+import json
 
 # Viewing Condition Setting
 peak_luminance = 500.0
@@ -28,6 +30,9 @@ display_ppd = 1 / pix_deg
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 lpyr = laplacian_pyramid_simple(32, 32, display_ppd, device)
+target_acc = 94.0
+save_log = {}
+
 
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
@@ -126,10 +131,10 @@ def make_layer(block, in_planes, out_planes, blocks, stride=1):
     return nn.Sequential(*layers)
 
 class PyramidResNet18(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, channel_net=[4, 64, 128, 256, 512]):
         super().__init__()
         base = resnet18(weights=None)
-        self.channel = [4, 64, 128, 256, 512] #最初是[64, 64, 128, 256, 512] #64-93.90%, 32-94.03%, 16-94.39%， 8-94.16%, 4-94.04%
+        self.channel = channel_net #最初是[64, 64, 128, 256, 512] #64-93.90%, 32-94.03%, 16-94.39%， 8-94.16%, 4-94.04%
         # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
@@ -188,28 +193,7 @@ class PyramidResNet18(nn.Module):
         return self.fc(torch.flatten(x, 1))
 
 
-# model = resnet18(weights=None)
-# model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 3x3 conv
-# model.maxpool = nn.Identity()  # 取消 maxpool
-# model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
-model = PyramidResNet18()
-model = model.to(device)
-summary(model, input_size=(3, 32, 32))
-
-if os.path.isfile(checkpoint_path) and load_pretrained_weights:
-    print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
-    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
-else:
-    print("No pretrained weights found, training from scratch.")
-
-# summary(model, input_size=(3, 32, 32))
-
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-
-
-def train(epoch):
+def train(epoch, model, criterion, optimizer):
     torch.cuda.empty_cache()
     model.train()
     # lpyr = laplacian_pyramid_simple(resolution[0], resolution[1], display_ppd, device)
@@ -224,7 +208,7 @@ def train(epoch):
         running_loss += loss.item()
     print(f"[Epoch {epoch}] Training Loss: {running_loss / len(trainloader):.3f}")
 
-def test(epoch):
+def test(epoch, model):
     torch.cuda.empty_cache()
     model.eval()
     correct = 0
@@ -240,16 +224,72 @@ def test(epoch):
     print(f"[Epoch {epoch}] Test Accuracy: {acc:.2f}%")
     return acc
 
+# 自动调整 channel 各维度值以满足最低准确率约束
+def auto_tune_channels():
+    original_channel = [16, 64, 128, 256, 512]
+    best_channel = original_channel.copy()
+    acc_history = []
+
+    for idx in range(len(best_channel)):
+        current = best_channel[idx] * 2
+        print(f"\n🔍 正在优化第 {idx} 维 channel（当前值：{current}）")
+        while current > 3:
+            # 候选新值
+            candidate = current // 2
+            if candidate < 3:
+                break
+
+            # 构建新模型
+            candidate_channel = best_channel.copy()
+            candidate_channel[idx] = candidate
+            print(f" ➜  尝试 {candidate_channel}")
+
+            model = PyramidResNet18(num_classes=10, channel_net=candidate_channel)
+            model = model.to(device)
+            summary(model, input_size=(3, 32, 32))
+
+            if os.path.isfile(checkpoint_path) and load_pretrained_weights:
+                print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
+                model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+            else:
+                print("No pretrained weights found, training from scratch.")
+
+            # summary(model, input_size=(3, 32, 32))
+
+            criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+            scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+
+            # 训练模型
+            best_acc = 0
+            for epoch in range(1,101):
+                print(f"Epoch {epoch+1}/100")
+                train(epoch, model, criterion, optimizer)
+                acc = test(epoch, model)
+                if acc > best_acc:
+                    best_acc = acc
+                scheduler.step()
+
+            acc_history.append((candidate_channel.copy(), best_acc.copy()))
+            print(f" ✅ 尝试 channel {candidate_channel}，准确率：{best_acc:.2f}%")
+
+            # 保存准确率到文件
+            save_path = f"channel_{'_'.join(map(str, candidate_channel))}_acc_{best_acc:.2f}.txt"
+            with open(save_path, 'w') as f:
+                f.write(f"channel: {candidate_channel}\naccuracy: {best_acc:.2f}\n")
+
+            if best_acc >= 94.0:
+                best_channel[idx] = candidate
+                current = candidate  # 尝试更小值
+            else:
+                print(f" ❌ {candidate} 太小，保持 {current}")
+                break
+
+    print("\n🎉 最优通道配置：", best_channel)
+    return best_channel, acc_history
+
+
 if __name__ == '__main__':
-    best_acc = 0
-    for epoch in tqdm(range(1, 101)):  # 可调节 epoch
-        train(epoch)
-        acc = test(epoch)
-        scheduler.step()
-        # 保存最好模型
-        if acc > best_acc:
-            best_acc = acc
-            torch.save(model.state_dict(), checkpoint_path)
-            print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
+    best_config, history = auto_tune_channels()
 
 # 将原本训练的RGB空间变为线性XYZ空间
