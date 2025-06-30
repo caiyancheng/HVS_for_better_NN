@@ -262,8 +262,8 @@ def auto_tune_channels():
 
             # 训练模型
             best_acc = 0
-            for epoch in range(1,101):
-                print(f"Epoch {epoch+1}/100")
+            for epoch in tqdm(range(1, 101)):
+                print(f"Epoch {epoch}/100")
                 train(epoch, model, criterion, optimizer)
                 acc = test(epoch, model)
                 if acc > best_acc:
