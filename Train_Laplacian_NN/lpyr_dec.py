@@ -434,3 +434,49 @@ class laplacian_pyramid_simple(lpyr_dec):
             lpyr.append(layer)
 
         return gpyr, lpyr
+
+class laplacian_pyramid_simple_contrast(lpyr_dec):
+    def __init__(self, W, H, ppd, device, contrast):
+        super().__init__(W, H, ppd, device)
+        self.contrast = contrast
+
+    def decompose(self, image, levels=None):
+        if levels is None:
+            levels = self.height + 1
+        kernel_a = 0.4
+        gpyr = self.gaussian_pyramid_dec(image, levels, kernel_a)
+
+        height = len(gpyr)
+        if height == 0:
+            return []
+
+        # Compute Laplacian pyramid
+        # lpyr = []
+        lpyr_contrast = []
+        L_bkg_pyr = []
+        for i in range(height):
+            is_baseband = (i==(height-1))
+            if is_baseband:
+                layer = gpyr[i]
+                L_bkg = torch.clamp(gpyr[i][..., 0:1, :, :], min=0.01)
+                # The sustained channels use the mean over the image as the background. Otherwise, they would be divided by itself and the contrast would be 1.
+                L_bkg_mean = torch.mean(L_bkg, dim=[-1, -2], keepdim=True)
+                L_bkg = L_bkg.repeat([1, 3, 1, 1])
+                L_bkg[:, 0:1, :, :] = L_bkg_mean
+            else:
+                glayer_ex = self.gausspyr_expand(gpyr[i+1], [gpyr[i].shape[-2], gpyr[i].shape[-1]], kernel_a)
+                layer = gpyr[i] - glayer_ex
+
+                # Order: test-sustained-Y, ref-sustained-Y, test-rg, ref-rg, test-yv, ref-yv, test-transient-Y, ref-transient-Y
+                # L_bkg is set to ref-sustained
+                if self.contrast == 'weber_g1':
+                    L_bkg = torch.clamp(glayer_ex[...,0:1,:,:], min=0.01)
+                else:
+                    raise RuntimeError( f"Contrast {self.contrast} not supported")
+
+            contrast = torch.clamp(torch.div(layer, L_bkg), max=1000.0)
+            # lpyr.append(layer)
+            lpyr_contrast.append(contrast)
+            L_bkg_pyr.append(torch.log10(L_bkg))
+
+        return lpyr_contrast, L_bkg_pyr
