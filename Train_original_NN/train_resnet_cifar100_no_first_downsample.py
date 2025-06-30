@@ -78,5 +78,5 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), '../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample.pth')
+            torch.save(model.state_dict(), '../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample.pth')
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
