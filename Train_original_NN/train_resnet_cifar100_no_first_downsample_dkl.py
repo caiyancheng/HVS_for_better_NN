@@ -90,14 +90,14 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True
 testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=False, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
-device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 model = resnet18(weights=None)
 model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 3x3 conv
 model.maxpool = nn.Identity()  # 取消 maxpool
 model.fc = nn.Linear(model.fc.in_features, 100)  # CIFAR-10 有10类
 model = model.to(device)
-# summary(model, input_size=(3, 32, 32), device=device)
+summary(model, input_size=(3, 32, 32), device=device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
