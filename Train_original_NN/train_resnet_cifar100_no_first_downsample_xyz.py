@@ -8,7 +8,7 @@ import os
 from tqdm import tqdm
 from torchsummary import summary
 
-peak_luminance = 100.0
+peak_luminance = 500.0
 
 def srgb_to_linear_rgb(srgb):
     """sRGB 转线性 RGB (gamma 解码)，输入 [0, 1]，输出 [0, 1]"""
