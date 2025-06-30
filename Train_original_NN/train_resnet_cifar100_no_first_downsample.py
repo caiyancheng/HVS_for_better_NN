@@ -22,10 +22,10 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-trainset = torchvision.datasets.CIFAR100(root=data_root, train=True, download=True, transform=transform_train)
+trainset = torchvision.datasets.CIFAR100(root=data_root, train=True, download=False, transform=transform_train)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
 
-testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=True, transform=transform_test)
+testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=False, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
