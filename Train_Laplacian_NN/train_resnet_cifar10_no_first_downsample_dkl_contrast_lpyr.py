@@ -12,7 +12,7 @@ from lpyr_dec import *
 import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock
 
-pyr_levels = 4
+pyr_levels = 5
 # Viewing Condition Setting
 peak_luminance = 500.0
 checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar10_no_first_downsample_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
