@@ -8,7 +8,7 @@ import os
 from tqdm import tqdm
 from torchsummary import summary
 
-peak_luminance = 500.0
+peak_luminance = 100.0
 
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
