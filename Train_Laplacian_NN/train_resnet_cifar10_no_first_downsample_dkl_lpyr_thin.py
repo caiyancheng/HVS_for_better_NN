@@ -145,7 +145,7 @@ class PyramidResNet18(nn.Module):
         self.layer3 = make_layer(BasicBlock, self.channel[2], self.channel[3], blocks=2, stride=2)
         self.layer4 = make_layer(BasicBlock, self.channel[3], self.channel[4], blocks=2, stride=2)
         self.avgpool = base.avgpool
-        self.fc = nn.Linear(base.fc.in_features, num_classes)
+        self.fc = nn.Linear(self.channel[4], num_classes)
 
         self.inject1 = nn.Conv2d(3, self.channel[0], 1)  # 将pyr[1]编码为 gating
         self.inject2 = nn.Conv2d(3, self.channel[1], 1)
