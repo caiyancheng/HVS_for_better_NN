@@ -130,7 +130,7 @@ class PyramidResNet18(nn.Module):
         super().__init__()
         base = resnet18(weights=None)
         # self.channel = [16, 64, 128, 256, 256] #最初是[64, 64, 128, 256, 512] #64-93.90%, 32-94.03%, 16-94.39%， 8-94.16%, 4-94.04%
-        self.channel = [16, 32, 64, 128, 512]
+        self.channel = [16, 64, 128, 256, 256]
         # 最后一块变成256好像对精度也没啥影响93.95%的准确度左右
         # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
