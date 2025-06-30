@@ -162,7 +162,7 @@ class PyramidResNet18(nn.Module):
         )
 
     def forward(self, x):
-        _, pyr = lpyr.decompose(x, levels=pyr_levels)
+        pyr, _ = lpyr.decompose(x, levels=pyr_levels)
         # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
         # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
