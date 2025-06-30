@@ -268,9 +268,10 @@ def auto_tune_channels():
                 acc = test(epoch, model)
                 if acc > best_acc:
                     best_acc = acc
+                    print(f"✅ New best accuracy {best_acc:.2f}%")
                 scheduler.step()
 
-            acc_history.append((candidate_channel.copy(), best_acc.copy()))
+            acc_history.append((candidate_channel.copy(), best_acc))
             print(f" ✅ 尝试 channel {candidate_channel}，准确率：{best_acc:.2f}%")
 
             # 保存准确率到文件
