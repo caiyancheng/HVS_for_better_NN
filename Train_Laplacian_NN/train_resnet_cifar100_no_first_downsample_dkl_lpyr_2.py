@@ -155,7 +155,7 @@ class PyramidResNet18(nn.Module):
         self.inject4 = nn.Conv2d(3, self.channel[3], 1)
 
         self.gate = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
+            # nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
             nn.Sigmoid()  # 输出在 (0,1)，用于门控
         )
 
@@ -255,3 +255,4 @@ if __name__ == '__main__':
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
 # 将原本训练的RGB空间变为线性XYZ空间
+# 维持AvgPool - 准确率75.35% (有些下降)
