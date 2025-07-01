@@ -11,6 +11,19 @@ import math
 from lpyr_dec import *
 import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock
+import random
+
+def set_seed(seed=42):
+    random.seed(seed)  # Python 原生随机模块
+    np.random.seed(seed)  # NumPy
+    torch.manual_seed(seed)  # PyTorch CPU
+    torch.cuda.manual_seed(seed)  # 当前 GPU
+    torch.cuda.manual_seed_all(seed)  # 所有 GPU（多卡）
+
+    torch.backends.cudnn.deterministic = True  # 保证每次卷积结果一样（可能稍慢）
+    torch.backends.cudnn.benchmark = False     # 关闭自动优化卷积算法选择（可复现）
+
+set_seed(66)  # 可改成你喜欢的种子数
 
 # Viewing Condition Setting
 peak_luminance = 100.0
@@ -261,4 +274,4 @@ if __name__ == '__main__':
 # 维持AvgPool - 准确率75.35% (有些下降)
 # 直接使用全维度的（无AvgPool) - 准确率75.01% (这必然是下降了)
 # 不使用SIGMOD - 准确率71.74% (什么玩意？)
-# 啥都没有 - 准确率75.28% (这不对吧?)
+# 啥都没有 - 准确率75.28% (这不对吧?) 只有74.8%了？
