@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 # Viewing condition
 peak_luminance = 100.0
-checkpoint_path = '../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_lpyr_thin_pl100.0_2.pth'
+checkpoint_path = '../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_lpyr_thin_pl100.0_1.pth'
 resolution = [3840, 2160]
 diagonal_size_inches = 55
 viewing_distance_meters = 1
@@ -142,23 +142,23 @@ class PyramidResNet18(nn.Module):
         # x = self.avgpool(x)
 
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        alpha1 = 1
-        # alpha1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
+        # alpha1 = 1
+        alpha1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
         # alpha1 = self.gate(feat1)
         x = self.layer1(x * alpha1)
 
-        alpha2 = 1
-        # alpha2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
+        # alpha2 = 1
+        alpha2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
         # alpha2 = self.gate(feat2)
         x = self.layer2(x * alpha2)
 
-        alpha3 = 1
-        # alpha3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
+        # alpha3 = 1
+        alpha3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
         # alpha3 = self.gate(feat3)
         x = self.layer3(x * alpha3)
 
-        alpha4 = 1
-        # alpha4 = self.inject4(F.interpolate(pyr[3], size=x.shape[-2:]))
+        # alpha4 = 1
+        alpha4 = self.inject4(F.interpolate(pyr[3], size=x.shape[-2:]))
         # alpha4 = self.gate(feat4)
         x = self.layer4(x * alpha4)
         x = self.avgpool(x)
