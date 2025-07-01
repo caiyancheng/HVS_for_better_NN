@@ -99,32 +99,70 @@ def make_layer(block, in_planes, out_planes, blocks, stride=1):
     return nn.Sequential(*layers)
 
 class PyramidResNet18(nn.Module):
-    def __init__(self, num_classes=100):
+    def __init__(self, num_classes=10):
         super().__init__()
         base = resnet18(weights=None)
+        # self.channel = [16, 64, 128, 256, 256] #最初是[64, 64, 128, 256, 512] #64-93.90%, 32-94.03%, 16-94.39%， 8-94.16%, 4-94.04%
         self.channel = [64, 64, 128, 256, 512]
-        base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)
+        # 最后一块变成256好像对精度也没啥影响93.95%的准确度左右
+        # base.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
+        base.conv1 = nn.Conv2d(3, self.channel[0], kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
         base.maxpool = nn.Identity()
 
         self.conv1 = base.conv1
-        self.bn1 = nn.BatchNorm2d(self.channel[0])
+        self.bn1 = nn.BatchNorm2d(self.channel[0]) ###卧槽！反而+0.4%的正向增长
         self.relu = base.relu
         self.maxpool = base.maxpool
-        self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], 2, 1)
-        self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], 2, 2)
-        self.layer3 = make_layer(BasicBlock, self.channel[2], self.channel[3], 2, 2)
-        self.layer4 = make_layer(BasicBlock, self.channel[3], self.channel[4], 2, 2)
+        # self.layer1 = base.layer1
+
+        self.layer1 = make_layer(BasicBlock, self.channel[0], self.channel[1], blocks=2, stride=1)
+        self.layer2 = make_layer(BasicBlock, self.channel[1], self.channel[2], blocks=2, stride=2)
+        self.layer3 = make_layer(BasicBlock, self.channel[2], self.channel[3], blocks=2, stride=2)
+        self.layer4 = make_layer(BasicBlock, self.channel[3], self.channel[4], blocks=2, stride=2)
         self.avgpool = base.avgpool
         self.fc = nn.Linear(self.channel[4], num_classes)
 
+        self.inject1 = nn.Conv2d(3, self.channel[0], 1)  # 将pyr[1]编码为 gating
+        self.inject2 = nn.Conv2d(3, self.channel[1], 1)
+        self.inject3 = nn.Conv2d(3, self.channel[2], 1)
+        self.inject4 = nn.Conv2d(3, self.channel[3], 1)
+
+        # self.gate = nn.Sequential(
+        #     # nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
+        #     nn.Sigmoid()  # 输出在 (0,1)，用于门控
+        # )
+
     def forward(self, x):
         _, pyr = lpyr.decompose(x, levels=4)
+        # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
+        # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
+        # x = self.layer2(x + self.inject2(F.interpolate(pyr[2], size=x.shape[-2:])))
+        # x = self.layer3(x + self.inject3(F.interpolate(pyr[3], size=x.shape[-2:])))
+        # x = self.layer4(x + self.inject4(F.interpolate(pyr[4], size=x.shape[-2:])))
+        # x = self.avgpool(x)
+
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        alpha1 = 1
+        # alpha1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
+        # alpha1 = self.gate(feat1)
+        x = self.layer1(x * alpha1)
+
+        alpha2 = 1
+        # alpha2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
+        # alpha2 = self.gate(feat2)
+        x = self.layer2(x * alpha2)
+
+        alpha3 = 1
+        # alpha3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
+        # alpha3 = self.gate(feat3)
+        x = self.layer3(x * alpha3)
+
+        alpha4 = 1
+        # alpha4 = self.inject4(F.interpolate(pyr[3], size=x.shape[-2:]))
+        # alpha4 = self.gate(feat4)
+        x = self.layer4(x * alpha4)
         x = self.avgpool(x)
+
         return self.fc(torch.flatten(x, 1))
 
 # Load model
