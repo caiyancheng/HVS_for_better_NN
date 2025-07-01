@@ -149,10 +149,10 @@ class PyramidResNet18(nn.Module):
         self.avgpool = base.avgpool
         self.fc = nn.Linear(self.channel[4], num_classes)
 
-        self.inject1 = nn.Conv2d(3, self.channel[0], 1)  # 将pyr[1]编码为 gating
-        self.inject2 = nn.Conv2d(3, self.channel[1], 1)
-        self.inject3 = nn.Conv2d(3, self.channel[2], 1)
-        self.inject4 = nn.Conv2d(3, self.channel[3], 1)
+        # self.inject1 = nn.Conv2d(3, self.channel[0], 1)  # 将pyr[1]编码为 gating
+        # self.inject2 = nn.Conv2d(3, self.channel[1], 1)
+        # self.inject3 = nn.Conv2d(3, self.channel[2], 1)
+        # self.inject4 = nn.Conv2d(3, self.channel[3], 1)
 
         # self.gate = nn.Sequential(
         #     # nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
