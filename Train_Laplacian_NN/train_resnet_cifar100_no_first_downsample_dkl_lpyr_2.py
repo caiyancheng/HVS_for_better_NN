@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 # Viewing Condition Setting
 peak_luminance = 100.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_lpyr_pl{peak_luminance}_5.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_lpyr_pl{peak_luminance}_1.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
