@@ -154,10 +154,10 @@ class PyramidResNet18(nn.Module):
         self.inject3 = nn.Conv2d(3, self.channel[2], 1)
         self.inject4 = nn.Conv2d(3, self.channel[3], 1)
 
-        self.gate = nn.Sequential(
-            # nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
-            nn.Sigmoid()  # 输出在 (0,1)，用于门控
-        )
+        # self.gate = nn.Sequential(
+        #     # nn.AdaptiveAvgPool2d(1),  # 全局池化，保留通道维度
+        #     nn.Sigmoid()  # 输出在 (0,1)，用于门控
+        # )
 
     def forward(self, x):
         _, pyr = lpyr.decompose(x, levels=4)
@@ -169,21 +169,21 @@ class PyramidResNet18(nn.Module):
         # x = self.avgpool(x)
 
         x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
-        feat1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
-        alpha1 = self.gate(feat1)
+        alpha1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
+        # alpha1 = self.gate(feat1)
         x = self.layer1(x * alpha1) #这样操作似乎没有任何的精度损失(-0.15%)
         # x = self.maxpool(self.relu(self.bn1(self.conv1(pyr[0])))) #直接使用pyr[0]会导致-0.9%左右的精度损失
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:]))) #直接使用pyr[1]会导致-1.5%左右的精度损失
-        feat2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
-        alpha2 = self.gate(feat2)
+        alpha2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
+        # alpha2 = self.gate(feat2)
         x = self.layer2(x * alpha2)
 
-        feat3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
-        alpha3 = self.gate(feat3)
+        alpha3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
+        # alpha3 = self.gate(feat3)
         x = self.layer3(x * alpha3)
 
-        feat4 = self.inject4(F.interpolate(pyr[3], size=x.shape[-2:]))
-        alpha4 = self.gate(feat4)
+        alpha4 = self.inject4(F.interpolate(pyr[3], size=x.shape[-2:]))
+        # alpha4 = self.gate(feat4)
         x = self.layer4(x * alpha4)
         x = self.avgpool(x)
 
@@ -256,3 +256,4 @@ if __name__ == '__main__':
 
 # 将原本训练的RGB空间变为线性XYZ空间
 # 维持AvgPool - 准确率75.35% (有些下降)
+# 直接使用全维度的（无AvgPool) - 准确率75.01% (这必然是下降了)
