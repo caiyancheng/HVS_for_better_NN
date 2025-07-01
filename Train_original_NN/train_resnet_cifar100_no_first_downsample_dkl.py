@@ -7,6 +7,20 @@ from torchvision.models import resnet18, ResNet18_Weights
 import os
 from tqdm import tqdm
 from torchsummary import summary
+import random
+import numpy as np
+
+def set_seed(seed=42):
+    random.seed(seed)  # Python 原生随机模块
+    np.random.seed(seed)  # NumPy
+    torch.manual_seed(seed)  # PyTorch CPU
+    torch.cuda.manual_seed(seed)  # 当前 GPU
+    torch.cuda.manual_seed_all(seed)  # 所有 GPU（多卡）
+
+    torch.backends.cudnn.deterministic = True  # 保证每次卷积结果一样（可能稍慢）
+    torch.backends.cudnn.benchmark = False     # 关闭自动优化卷积算法选择（可复现）
+
+set_seed(66)  # 可改成你喜欢的种子数
 
 peak_luminance = 100.0
 
@@ -140,8 +154,8 @@ if __name__ == '__main__':
         # 保存最好模型
         if acc > best_acc:
             best_acc = acc
-            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_pl{peak_luminance}.pth')
+            torch.save(model.state_dict(), f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_pl{peak_luminance}_1.pth')
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
-# 将原本训练的RGB空间变为线性XYZ空间
+# 将原本训练的RGB空间变为线性DKL空间
 # 准确度是75.57% (果然似乎有-0.4%左右的精度损失)
