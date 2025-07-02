@@ -26,7 +26,7 @@ def set_seed(seed=42):
 set_seed(66)  # 可改成你喜欢的种子数
 
 # Viewing Condition Setting
-peak_luminance = 500.0
+peak_luminance = 100.0
 checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_pl{peak_luminance}_baseline_1.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
