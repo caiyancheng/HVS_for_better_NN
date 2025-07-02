@@ -26,8 +26,8 @@ def set_seed(seed=42):
 set_seed(66)  # 可改成你喜欢的种子数
 
 # Viewing Condition Setting
-peak_luminance = 100.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_lpyr_thin_pl{peak_luminance}_3.pth'
+peak_luminance = 500.0
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_pl{peak_luminance}_baseline_1.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
@@ -274,4 +274,4 @@ if __name__ == '__main__':
 # 维持AvgPool - 准确率75.35% (有些下降)
 # 直接使用全维度的（无AvgPool) - 准确率75.01% (这必然是下降了)
 # 不使用SIGMOD - 准确率71.74% (什么玩意？)
-# 啥都没有 - 准确率75.28% (这不对吧?) 只有74.8%了？
+# 啥都没有 - 准确率75.25% (你可以理解为baseline)
