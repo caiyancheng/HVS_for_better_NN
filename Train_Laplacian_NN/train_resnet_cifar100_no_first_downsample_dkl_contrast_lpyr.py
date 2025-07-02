@@ -12,10 +12,24 @@ from lpyr_dec import *
 import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock
 
+import random
+
+def set_seed(seed=42):
+    random.seed(seed)  # Python 原生随机模块
+    np.random.seed(seed)  # NumPy
+    torch.manual_seed(seed)  # PyTorch CPU
+    torch.cuda.manual_seed(seed)  # 当前 GPU
+    torch.cuda.manual_seed_all(seed)  # 所有 GPU（多卡）
+
+    torch.backends.cudnn.deterministic = True  # 保证每次卷积结果一样（可能稍慢）
+    torch.backends.cudnn.benchmark = False     # 关闭自动优化卷积算法选择（可复现）
+
+set_seed(66)  # 可改成你喜欢的种子数
+
 pyr_levels = 4
 # Viewing Condition Setting
 peak_luminance = 100.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
 load_pretrained_weights = False
 resolution = [3840,2160]
 diagonal_size_inches = 55
