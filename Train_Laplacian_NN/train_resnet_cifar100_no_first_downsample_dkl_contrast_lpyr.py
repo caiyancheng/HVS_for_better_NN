@@ -14,7 +14,7 @@ from torchvision.models.resnet import BasicBlock
 
 import random
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 def set_seed(seed=42):
