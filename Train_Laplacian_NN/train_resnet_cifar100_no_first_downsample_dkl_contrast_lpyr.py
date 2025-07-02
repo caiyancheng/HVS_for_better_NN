@@ -13,6 +13,9 @@ import torch.nn.functional as F
 from torchvision.models.resnet import BasicBlock
 
 import random
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 
 def set_seed(seed=42):
     random.seed(seed)  # Python 原生随机模块
@@ -26,9 +29,9 @@ def set_seed(seed=42):
 
 set_seed(66)  # 可改成你喜欢的种子数
 
-pyr_levels = 5
+pyr_levels = 4
 # Viewing Condition Setting
-peak_luminance = 100.0
+peak_luminance = 500.0
 checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
 print(checkpoint_path)
 load_pretrained_weights = False
@@ -43,7 +46,7 @@ display_size_m = (ar*height_mm/1000, height_mm/1000)
 pix_deg = 2 * math.degrees(math.atan(0.5 * display_size_m[0] / resolution[0] / viewing_distance_meters))
 display_ppd = 1 / pix_deg
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 lpyr = laplacian_pyramid_simple_contrast(32, 32, display_ppd, device, contrast='weber_g1')
 
 # --- ✅ DKL转换相关矩阵 ---
