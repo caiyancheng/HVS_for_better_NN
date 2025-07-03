@@ -35,7 +35,7 @@ set_seed(66)  # 可改成你喜欢的种子数
 pyr_levels = 4
 # Viewing Condition Setting
 peak_luminance = 500.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_masking_level_{pyr_levels}_pl{peak_luminance}_1.pth'
 print(checkpoint_path)
 load_pretrained_weights = False
 resolution = [32, 32]
