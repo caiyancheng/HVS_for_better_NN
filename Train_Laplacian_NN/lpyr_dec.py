@@ -13,7 +13,7 @@ class lpyr_dec():
     def __init__(self, W, H, ppd, device):
         self.device = device
         self.ppd = ppd
-        self.min_freq = 0.2
+        self.min_freq = 0.1
         self.W = W
         self.H = H
 
