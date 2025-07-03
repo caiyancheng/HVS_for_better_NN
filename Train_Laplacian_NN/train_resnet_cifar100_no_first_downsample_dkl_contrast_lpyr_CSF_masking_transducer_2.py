@@ -1,7 +1,6 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-import argparse
 import torch.nn as nn
 import torch.optim as optim
 from torchvision.models import resnet18, ResNet18_Weights
@@ -17,17 +16,8 @@ import os
 from torchvision.transforms import GaussianBlur
 from torch.functional import Tensor
 
-
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-parser = argparse.ArgumentParser(description='Run training with customizable peak luminance and display size.')
-parser.add_argument('--pyr_levels', type=int, default=4)
-parser.add_argument('--peak_luminance', type=float, default=500.0, help='Peak luminance value (default: 500.0)')
-parser.add_argument('--diagonal_size_inches', type=float, default=10.0, help='Display diagonal size in inches (default: 10.0)')
-args = parser.parse_args()
-# peak_luminance = args.peak_luminance
-# diagonal_size_inches = args.diagonal_size_inches
 
 def set_seed(seed=42):
     random.seed(seed)  # Python 原生随机模块
@@ -42,33 +32,15 @@ def set_seed(seed=42):
 
 set_seed(66)  # 可改成你喜欢的种子数
 
-pyr_levels = args.pyr_levels #4
+pyr_levels = 4
 # Viewing Condition Setting
-peak_luminance = args.peak_luminance #500.0
-diagonal_size_inches = args.diagonal_size_inches #10  # 5
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_masking_level{pyr_levels}_pl{peak_luminance}_dsi{diagonal_size_inches}_1.pth'
+peak_luminance = 500.0
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_masking_level_{pyr_levels}_pl{peak_luminance}_1.pth'
 print(checkpoint_path)
 load_pretrained_weights = False
 resolution = [32, 32]
+diagonal_size_inches = 10  # 5
 viewing_distance_meters = 1
-
-import sys
-
-class Logger(object):
-    def __init__(self, filename="training_log.txt"):
-        self.terminal = sys.stdout
-        self.log = open(filename, "w")
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-
-    def flush(self):
-        self.terminal.flush()
-        self.log.flush()
-
-sys.stdout = Logger(f"../training_log/training_resnet18_cifar100_dkl_masking_level{pyr_levels}_pl{peak_luminance}_dsi{diagonal_size_inches}.txt")
-sys.stderr = sys.stdout  # 错误输出也重定向到同一个文件
 
 ar = resolution[0] / resolution[1]
 height_mm = math.sqrt((diagonal_size_inches * 25.4) ** 2 / (1 + ar ** 2))
@@ -414,4 +386,4 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), checkpoint_path)
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
-# 准确率只有74.05%, 有点点问题; 此处的transducer在masking的输入处只有单一test,根本无reference
+# 相比初始版本, 此处使用图像的均值作为reference, 希望有用
