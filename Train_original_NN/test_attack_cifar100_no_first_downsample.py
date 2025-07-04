@@ -55,7 +55,7 @@ def get_numpy_test_data(dataloader, n_batches=1):
     y = torch.cat(y_list, dim=0).numpy()
     return x, y
 
-x_test, y_test = get_numpy_test_data(testloader, n_batches=10)  # 取前1000个样本
+x_test, y_test = get_numpy_test_data(testloader, n_batches=100)  # 取前10000个样本
 
 # ===================== 6. 执行 PGD 对抗攻击 =====================
 attack = ProjectedGradientDescent(
@@ -75,5 +75,5 @@ pred_adv = np.argmax(classifier.predict(x_adv), axis=1)
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (1000 samples): {acc_clean * 100:.2f}%") #76.8%
-print(f"⚠️ PGD Adversarial Accuracy (1000 samples): {acc_adv * 100:.2f}%") #6.2%
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #76.8%
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #6.2%
