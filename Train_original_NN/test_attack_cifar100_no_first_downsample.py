@@ -75,5 +75,5 @@ pred_adv = np.argmax(classifier.predict(x_adv), axis=1)
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #76.8%
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #6.2%
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #75.99%
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #7.12%

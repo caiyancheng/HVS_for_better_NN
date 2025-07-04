@@ -10,7 +10,7 @@ from art.attacks.evasion import ProjectedGradientDescent
 from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 
-peak_luminance = 100.0
+peak_luminance = 500.0
 
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
@@ -150,4 +150,4 @@ acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
 print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #76.11%
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #15.85% DKL space的准确率好像高得多？
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #100:15.85% DKL space的准确率好像高得多？
