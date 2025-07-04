@@ -58,7 +58,7 @@ def get_numpy_test_data(dataloader, n_batches=1):
 x_test, y_test = get_numpy_test_data(testloader, n_batches=100)  # 取前10000个样本
 
 # ===================== 6. 执行 PGD 对抗攻击 =====================
-eps_value = 0#.02#0.1 #0.02
+eps_value = 0.02#0.1 #0.02
 attack = ProjectedGradientDescent(
     estimator=classifier,
     eps=eps_value,         # 最大扰动 ∥L∞∥ = 0.1
