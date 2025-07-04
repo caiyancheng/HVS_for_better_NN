@@ -122,4 +122,4 @@ acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
 print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #100: 75.71%; 500: 75.39%
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: 7.87%; 500: 3.54%]; 0.02:[100:; 500: 51.10%] 我去咋这么低
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: 7.87%; 500: 3.54%]; 0.02:[100: 60.76%; 500: 51.10%] 我去咋这么低
