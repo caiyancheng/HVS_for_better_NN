@@ -11,7 +11,7 @@ from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 
 # ===================== 0. 定义 XYZ 空间转换函数 =====================
-peak_luminance = 500.0
+peak_luminance = 100 #500.0
 
 def srgb_to_linear_rgb(srgb):
     """sRGB 转线性 RGB (gamma 解码)，输入 [0, 1]，输出 [0, 1]"""
@@ -120,5 +120,5 @@ pred_adv = logits_adv.argmax(dim=1).cpu().numpy()
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #75.39%
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #3.54% 我去咋这么低
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #500: 75.39%
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #500: 3.54% 我去咋这么低
