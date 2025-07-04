@@ -10,9 +10,21 @@ from art.attacks.evasion import ProjectedGradientDescent
 from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 
-# ===================== 0. 定义 XYZ 空间转换函数 =====================
-peak_luminance = 500.0
+peak_luminance = 100.0
 
+# --- ✅ DKL转换相关矩阵 ---
+LMS2006_to_DKLd65 = torch.tensor([
+  [1.000000000000000,   1.000000000000000,                   0],
+  [1.000000000000000,  -2.311130179947035,                   0],
+  [-1.000000000000000,  -1.000000000000000,  50.977571328718781]
+], dtype=torch.float32)
+XYZ_to_LMS2006 = torch.tensor([
+   [0.187596268556126,   0.585168649077728,  -0.026384263306304],
+   [-0.133397430663221,   0.405505777260049,   0.034502127690364],
+   [0.000244379021663,  -0.000542995890619,   0.019406849066323]
+], dtype=torch.float32)
+
+# --- ✅ sRGB → Linear RGB ---
 def srgb_to_linear_rgb(srgb):
     """sRGB 转线性 RGB (gamma 解码)，输入 [0, 1]，输出 [0, 1]"""
     threshold = 0.04045
@@ -23,8 +35,10 @@ def srgb_to_linear_rgb(srgb):
     )
     return linear
 
+# --- ✅ Linear RGB → XYZ (D65) ---
 def linear_rgb_to_xyz(rgb):
     """线性 RGB → XYZ，D65"""
+    # 使用 sRGB 的 D65 到 XYZ 转换矩阵
     M = torch.tensor([[0.4124564, 0.3575761, 0.1804375],
                       [0.2126729, 0.7151522, 0.0721750],
                       [0.0193339, 0.1191920, 0.9503041]], dtype=rgb.dtype, device=rgb.device)
@@ -32,24 +46,39 @@ def linear_rgb_to_xyz(rgb):
     xyz = torch.tensordot(rgb, M.T, dims=1)  # (H,W,3)
     return xyz.permute(2, 0, 1)  # (3,H,W)
 
-class RGBtoXYZTransform:
+# --- ✅ XYZ → LMS2006 ---
+def xyz_to_lms2006(xyz):
+    xyz = xyz.permute(1, 2, 0)  # C,H,W → H,W,C
+    lms = torch.tensordot(xyz, XYZ_to_LMS2006.T.to(xyz.device), dims=1)
+    return lms.permute(2, 0, 1)
+
+# --- ✅ LMS2006 → DKL ---
+def lms_to_dkl(lms):
+    lms = lms.permute(1, 2, 0)  # C,H,W → H,W,C
+    dkl = torch.tensordot(lms, LMS2006_to_DKLd65.T.to(lms.device), dims=1)
+    return dkl.permute(2, 0, 1)  # C,H,W
+
+# --- ✅ 最终 transform（sRGB → DKL） ---
+class RGBtoDKLTransform:
     def __init__(self, peak_luminance=500.0):
         self.peak_luminance = peak_luminance
 
     def __call__(self, tensor):
-        tensor = srgb_to_linear_rgb(tensor)
-        tensor = linear_rgb_to_xyz(tensor)
-        return tensor * self.peak_luminance
+        tensor = srgb_to_linear_rgb(tensor)               # sRGB → linear RGB
+        tensor = linear_rgb_to_xyz(tensor) * self.peak_luminance  # → XYZ (cd/m²)
+        tensor = xyz_to_lms2006(tensor)                   # → LMS
+        tensor = lms_to_dkl(tensor)                       # → DKL
+        return tensor
 
 # ===================== 1. 设置设备和路径 =====================
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 data_root = '../Datasets/CIFAR10/data'
 
-# ===================== 2. 准备 sRGB & XYZ 数据变换器 =====================
+# ===================== 2. 准备 sRGB & DKL 数据变换器 =====================
 transform_srgb = transforms.ToTensor()  # 用于对抗样本生成
-transform_xyz = transforms.Compose([
+transform_dkl = transforms.Compose([
     transforms.ToTensor(),
-    RGBtoXYZTransform(peak_luminance=peak_luminance)
+    RGBtoDKLTransform(peak_luminance=peak_luminance)
 ])  # 用于模型输入
 
 # ===================== 3. 加载测试集（两个版本） =====================
@@ -63,7 +92,7 @@ model.maxpool = nn.Identity()
 model.fc = nn.Linear(model.fc.in_features, 100)
 model = model.to(device)
 model.load_state_dict(torch.load(
-    f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_xyz_pl{peak_luminance}.pth'
+    f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_dkl_pl{peak_luminance}.pth'
 ))
 model.eval()
 
@@ -103,16 +132,16 @@ attack = ProjectedGradientDescent(
 x_adv_np = attack.generate(x=x_test_np)
 x_adv_tensor = torch.tensor(x_adv_np)
 
-# ===================== 8. 转换原始 & 对抗样本为 XYZ 空间 =====================
-rgb_to_xyz = RGBtoXYZTransform(peak_luminance=peak_luminance)
-x_test_xyz = torch.stack([rgb_to_xyz(x) for x in x_test_tensor])
-x_adv_xyz = torch.stack([rgb_to_xyz(x) for x in x_adv_tensor])
+# ===================== 8. 转换原始 & 对抗样本为 DKL 空间 =====================
+rgb_to_dkl = RGBtoDKLTransform(peak_luminance=peak_luminance)
+x_test_dkl = torch.stack([rgb_to_dkl(x) for x in x_test_tensor])
+x_adv_dkl = torch.stack([rgb_to_dkl(x) for x in x_adv_tensor])
 
 # ===================== 9. 评估模型准确率 =====================
 model.eval()
 with torch.no_grad():
-    logits_clean = model(x_test_xyz.to(device))
-    logits_adv = model(x_adv_xyz.to(device))
+    logits_clean = model(x_test_dkl.to(device))
+    logits_adv = model(x_adv_dkl.to(device))
 
 pred_clean = logits_clean.argmax(dim=1).cpu().numpy()
 pred_adv = logits_adv.argmax(dim=1).cpu().numpy()
