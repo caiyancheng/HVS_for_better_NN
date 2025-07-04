@@ -10,7 +10,7 @@ from art.attacks.evasion import ProjectedGradientDescent
 from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 from torchvision.models.resnet import BasicBlock
-peak_luminance = 500.0
+peak_luminance = 100.0
 
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
@@ -206,10 +206,11 @@ def get_test_data_for_attack(dataloader, n_batches=1):
 x_test_np, y_test, x_test_tensor = get_test_data_for_attack(testloader_srgb, n_batches=100)
 
 # ===================== 7. 执行 PGD 攻击（sRGB 空间） =====================
+eps_value = 0.02#0.1 #0.02
 attack = ProjectedGradientDescent(
     estimator=classifier,
-    eps=0.1,
-    eps_step=0.01,
+    eps=eps_value,
+    eps_step=eps_value*0.1,
     max_iter=32,
     verbose=True
 )
@@ -233,5 +234,5 @@ pred_adv = logits_adv.argmax(dim=1).cpu().numpy()
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #100: 75.25%; 500:75.57%
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #100: 15.26%; 500:12.89% DKL space的准确率好像高得多？
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #0.1: [100: 75.25%; 500:75.50%]; 0.02: [100:; 500:]
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: 15.26%; 500:9.87%]; 0.02: [100:; 500:] DKL space的准确率好像高得多？
