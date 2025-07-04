@@ -51,7 +51,7 @@ display_ppd = 1 / pix_deg
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 lpyr = laplacian_pyramid_simple_contrast(resolution[1], resolution[0], display_ppd, device, contrast='weber_g1')
 
-with open('Train_Laplacian_NN/cvvdp_parameters.json', 'r') as fp:
+with open('Train_Laplacian_NN/cvvdp_parameters_transducer.json', 'r') as fp:
     parameters = json.load(fp)
 CSF_castleCSF = castleCSF(csf_version=parameters['csf'], device=device)
 csf_sigma = torch.as_tensor(parameters['csf_sigma'], device=device)
