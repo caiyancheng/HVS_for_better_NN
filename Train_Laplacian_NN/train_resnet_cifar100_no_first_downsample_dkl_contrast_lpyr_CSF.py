@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import argparse
 import torch.nn as nn
 import torch.optim as optim
 from torchvision.models import resnet18, ResNet18_Weights
@@ -16,8 +17,17 @@ import os
 from torchvision.transforms import GaussianBlur
 from torch.functional import Tensor
 
+
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+parser = argparse.ArgumentParser(description='Run training with customizable peak luminance and display size.')
+parser.add_argument('--pyr_levels', type=int, default=4)
+parser.add_argument('--peak_luminance', type=float, default=500.0, help='Peak luminance value (default: 500.0)')
+parser.add_argument('--diagonal_size_inches', type=float, default=10.0, help='Display diagonal size in inches (default: 10.0)')
+args = parser.parse_args()
+# peak_luminance = args.peak_luminance
+# diagonal_size_inches = args.diagonal_size_inches
 
 def set_seed(seed=42):
     random.seed(seed)  # Python 原生随机模块
@@ -32,15 +42,33 @@ def set_seed(seed=42):
 
 set_seed(66)  # 可改成你喜欢的种子数
 
-pyr_levels = 4
+pyr_levels = args.pyr_levels #4
 # Viewing Condition Setting
-peak_luminance = 500.0
-checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_masking_level_{pyr_levels}_pl{peak_luminance}_1.pth'
+peak_luminance = args.peak_luminance #500.0
+diagonal_size_inches = args.diagonal_size_inches #10  # 5
+checkpoint_path = f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_CSF_level{pyr_levels}_pl{peak_luminance}_dsi{diagonal_size_inches}_1.pth'
 print(checkpoint_path)
 load_pretrained_weights = False
 resolution = [32, 32]
-diagonal_size_inches = 10  # 5
 viewing_distance_meters = 1
+
+import sys
+
+class Logger(object):
+    def __init__(self, filename="training_log.txt"):
+        self.terminal = sys.stdout
+        self.log = open(filename, "w")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
+sys.stdout = Logger(f"../training_log/training_resnet18_cifar100_dkl_CSF_level{pyr_levels}_pl{peak_luminance}_dsi{diagonal_size_inches}.txt")
+sys.stderr = sys.stdout  # 错误输出也重定向到同一个文件
 
 ar = resolution[0] / resolution[1]
 height_mm = math.sqrt((diagonal_size_inches * 25.4) ** 2 / (1 + ar ** 2))
@@ -266,7 +294,6 @@ class PyramidResNet18(nn.Module):
         )
 
     def forward(self, x):
-        reference_x = x.mean(dim=[2, 3], keepdim=True)
         lpyr_contrast, L_bkg_pyr = lpyr.decompose(x, levels=pyr_levels)
         rho_band = lpyr.get_freqs()
         PYR_list = []
@@ -274,7 +301,7 @@ class PyramidResNet18(nn.Module):
             is_baseband = (bb == (len(lpyr_contrast) - 1))
             if bb == (len(lpyr_contrast) - 1) or bb == 0:
                 pyr_level = lpyr_contrast[bb] * 2 #[128,3,32,32]
-                logL_bkg = L_bkg_pyr[bb] * 2
+                logL_bkg = L_bkg_pyr[bb] #* 2
             else:
                 pyr_level = lpyr_contrast[bb]
                 logL_bkg = L_bkg_pyr[bb]
@@ -290,7 +317,8 @@ class PyramidResNet18(nn.Module):
                 D = (torch.abs(pyr_level.permute(1, 0, 2, 3)) * S)
             else:
                 # dimensions: [channel,frame,height,width]
-                D = apply_masking_model(pyr_level.permute(1, 0, 2, 3), S)
+                D = (torch.abs(pyr_level.permute(1, 0, 2, 3)) * S)
+                # D = apply_masking_model(pyr_level.permute(1, 0, 2, 3), S)
             PYR_list.append(D.permute(1, 0, 2, 3))
         # x = self.conv1(torch.cat([x, pyr[0]], dim=1))
         # x = self.layer1(x + self.inject1(F.interpolate(pyr[1], size=x.shape[-2:])))
@@ -327,7 +355,7 @@ class PyramidResNet18(nn.Module):
 # model.fc = nn.Linear(model.fc.in_features, 10)  # CIFAR-10 有10类
 model = PyramidResNet18(num_classes=100)
 model = model.to(device)
-# summary(model, input_size=(3, 32, 32))
+summary(model, input_size=(3, 32, 32))
 
 if os.path.isfile(checkpoint_path) and load_pretrained_weights:
     print(f"⚡️ Loading pretrained weights from {checkpoint_path}")
@@ -335,7 +363,7 @@ if os.path.isfile(checkpoint_path) and load_pretrained_weights:
 else:
     print("No pretrained weights found, training from scratch.")
 
-summary(model, input_size=(3, 32, 32))
+# summary(model, input_size=(3, 32, 32))
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
@@ -387,4 +415,4 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), checkpoint_path)
             print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
 
-# 相比初始版本, 此处使用图像的均值作为reference, 希望有用
+# 准确率只有74.05%, 有点点问题; 此处的transducer在masking的输入处只有单一test,根本无reference
