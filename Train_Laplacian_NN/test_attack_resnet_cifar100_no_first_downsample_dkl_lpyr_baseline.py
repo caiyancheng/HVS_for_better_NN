@@ -235,4 +235,4 @@ acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
 print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #[100: 75.25%; 500:75.50%];
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: 15.26%; 500:9.87%]; 0.02: [100:63.50%; 500:] DKL space的准确率好像高得多？
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: 15.26%; 500:9.87%]; 0.02: [100:63.50%; 500:62.35%] DKL space的准确率好像高得多？
