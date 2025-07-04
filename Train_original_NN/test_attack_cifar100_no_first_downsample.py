@@ -60,9 +60,9 @@ x_test, y_test = get_numpy_test_data(testloader, n_batches=10)  # 取前1000个�
 # ===================== 6. 执行 PGD 对抗攻击 =====================
 attack = ProjectedGradientDescent(
     estimator=classifier,
-    eps=8/255,         # 最大扰动
-    eps_step=2/255,    # 每步的扰动大小
-    max_iter=40,
+    eps=0.1,         # 最大扰动 ∥L∞∥ = 0.1
+    eps_step=0.01,   # 每步扰动大小
+    max_iter=32,     # 最大迭代次数
     verbose=True
 )
 
