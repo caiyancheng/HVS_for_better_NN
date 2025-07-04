@@ -11,7 +11,7 @@ from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 
 # ===================== 0. 定义 XYZ 空间转换函数 =====================
-peak_luminance = 100 #500.0
+peak_luminance = 100.0 #500.0
 
 def srgb_to_linear_rgb(srgb):
     """sRGB 转线性 RGB (gamma 解码)，输入 [0, 1]，输出 [0, 1]"""
