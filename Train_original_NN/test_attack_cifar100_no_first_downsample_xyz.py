@@ -10,6 +10,39 @@ from art.attacks.evasion import ProjectedGradientDescent
 from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 
+peak_luminance = 500.0
+
+def srgb_to_linear_rgb(srgb):
+    """sRGB 转线性 RGB (gamma 解码)，输入 [0, 1]，输出 [0, 1]"""
+    threshold = 0.04045
+    linear = torch.where(
+        srgb <= threshold,
+        srgb / 12.92,
+        ((srgb + 0.055) / 1.055) ** 2.4
+    )
+    return linear
+
+def linear_rgb_to_xyz(rgb):
+    """线性 RGB → XYZ，D65"""
+    # 使用 sRGB 的 D65 到 XYZ 转换矩阵
+    M = torch.tensor([[0.4124564, 0.3575761, 0.1804375],
+                      [0.2126729, 0.7151522, 0.0721750],
+                      [0.0193339, 0.1191920, 0.9503041]], dtype=rgb.dtype, device=rgb.device)
+    rgb = rgb.permute(1, 2, 0)  # (C,H,W) → (H,W,C)
+    xyz = torch.tensordot(rgb, M.T, dims=1)  # (H,W,3)
+    return xyz.permute(2, 0, 1)  # (3,H,W)
+
+class RGBtoXYZTransform:
+    def __init__(self, peak_luminance=500.0):
+        self.peak_luminance = peak_luminance
+
+    def __call__(self, tensor):
+        # 输入 tensor 是 [0,1] 的 sRGB，shape: (C,H,W)
+        tensor = srgb_to_linear_rgb(tensor)
+        tensor = linear_rgb_to_xyz(tensor)
+        # 归一化 XYZ 空间，使其最大值为 1（以峰值亮度 500cd/m² 表示）
+        return tensor * self.peak_luminance
+
 # ===================== 1. 设置设备 & 数据集路径 =====================
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 data_root = '../Datasets/CIFAR10/data'
@@ -17,7 +50,9 @@ data_root = '../Datasets/CIFAR10/data'
 # ===================== 2. 数据预处理 =====================
 transform_test = transforms.Compose([
     transforms.ToTensor(),
+    RGBtoXYZTransform(peak_luminance=peak_luminance)
 ])
+
 testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=False, transform=transform_test)
 testloader = DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
 
@@ -27,7 +62,7 @@ model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 model.maxpool = nn.Identity()
 model.fc = nn.Linear(model.fc.in_features, 100)
 model = model.to(device)
-model.load_state_dict(torch.load('../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample.pth'))
+model.load_state_dict(torch.load(f'../HVS_for_better_NN_pth/best_resnet18_cifar100_no_first_downsample_xyz_pl{peak_luminance}.pth'))
 model.eval()
 
 # ===================== 4. 包装 ART 的 PyTorchClassifier =====================
