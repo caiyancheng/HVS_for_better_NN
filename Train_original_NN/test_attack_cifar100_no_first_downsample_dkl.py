@@ -149,5 +149,5 @@ pred_adv = logits_adv.argmax(dim=1).cpu().numpy()
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #74.90%
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #14.90 %DKL space的准确率好像高得多？
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #76.11%
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #15.85% DKL space的准确率好像高得多？

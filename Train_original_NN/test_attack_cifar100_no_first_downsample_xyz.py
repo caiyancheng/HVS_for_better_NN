@@ -90,7 +90,7 @@ def get_test_data_for_attack(dataloader, n_batches=1):
     y = torch.cat(y_list, dim=0)
     return x.numpy(), y.numpy(), x
 
-x_test_np, y_test, x_test_tensor = get_test_data_for_attack(testloader_srgb, n_batches=10)
+x_test_np, y_test, x_test_tensor = get_test_data_for_attack(testloader_srgb, n_batches=100)
 
 # ===================== 7. 执行 PGD 攻击（sRGB 空间） =====================
 attack = ProjectedGradientDescent(
@@ -120,5 +120,5 @@ pred_adv = logits_adv.argmax(dim=1).cpu().numpy()
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (1000 samples): {acc_clean * 100:.2f}%") #74.10%
-print(f"⚠️ PGD Adversarial Accuracy (1000 samples): {acc_adv * 100:.2f}%") #4.10%更低了我朝
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #74.10%
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #4.10%更低了我朝
