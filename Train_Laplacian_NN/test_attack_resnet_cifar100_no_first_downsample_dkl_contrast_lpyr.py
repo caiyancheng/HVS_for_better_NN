@@ -11,11 +11,19 @@ from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 from torchvision.models.resnet import BasicBlock
 import torch.nn.functional as F
+import argparse
 
-pyr_levels = 4
-peak_luminance = 100.0
+parser = argparse.ArgumentParser(description='Run training with customizable peak luminance and display size.')
+parser.add_argument('--pyr_levels', type=int, default=4)
+parser.add_argument('--eps_value', type=float, default=0.1)
+parser.add_argument('--peak_luminance', type=float, default=500.0, help='Peak luminance value (default: 500.0)')
+parser.add_argument('--diagonal_size_inches', type=float, default=10.0, help='Display diagonal size in inches (default: 10.0)')
+args = parser.parse_args()
+
+pyr_levels = args.pyr_levels
+peak_luminance = args.peak_luminance
 resolution = [32, 32]
-diagonal_size_inches = 50.0
+diagonal_size_inches = args.diagonal_size_inches
 viewing_distance_meters = 1
 ar = resolution[0]/resolution[1]
 height_mm = math.sqrt( (diagonal_size_inches*25.4)**2 / (1+ar**2) )
@@ -213,7 +221,7 @@ def get_test_data_for_attack(dataloader, n_batches=1):
 x_test_np, y_test, x_test_tensor = get_test_data_for_attack(testloader_srgb, n_batches=100)
 
 # ===================== 7. 执行 PGD 攻击（sRGB 空间） =====================
-eps_value = 0.02#0.1 #0.02
+eps_value = args.eps_value#0.1 #0.02
 attack = ProjectedGradientDescent(
     estimator=classifier,
     eps=eps_value,
@@ -241,5 +249,5 @@ pred_adv = logits_adv.argmax(dim=1).cpu().numpy()
 acc_clean = np.mean(pred_clean == y_test)
 acc_adv = np.mean(pred_adv == y_test)
 
-print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #[100: 75.25%; 500:75.50%];
-print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: 15.26%; 500:9.87%]; 0.02: [100:63.50%; 500:62.35%] DKL space的准确率好像高得多？
+print(f"\n✅ Clean Accuracy (10000 samples): {acc_clean * 100:.2f}%") #[100: 75.08%; 500: %];
+print(f"⚠️ PGD Adversarial Accuracy (10000 samples): {acc_adv * 100:.2f}%") #0.1: [100: %; 500: %]; 0.02: [100: 39.47%; 500: %] DKL space的准确率好像高得多？
