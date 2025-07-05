@@ -10,6 +10,7 @@ from art.attacks.evasion import ProjectedGradientDescent
 from art.estimators.classification import PyTorchClassifier
 from tqdm import tqdm
 from torchvision.models.resnet import BasicBlock
+import torch.nn.functional as F
 
 pyr_levels = 4
 peak_luminance = 500.0
