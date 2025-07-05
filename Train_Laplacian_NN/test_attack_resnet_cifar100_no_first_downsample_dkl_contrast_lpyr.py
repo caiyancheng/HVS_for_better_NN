@@ -13,7 +13,7 @@ from torchvision.models.resnet import BasicBlock
 import torch.nn.functional as F
 
 pyr_levels = 4
-peak_luminance = 500.0
+peak_luminance = 100.0
 
 
 resolution = [3840,2160]
