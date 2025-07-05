@@ -74,6 +74,7 @@ if __name__ == '__main__':
 
     for dataset_name, model_name, color_space_name, peak_luminance in itertools.product(train_dataset_name_list, model_name_list,
                                                                         color_space_name_list, peak_luminance_list):
+        set_seed(66)
         print(f"Dataset: {dataset_name}, Model: {model_name}, Color Space: {color_space_name}, Peak Luminance: {peak_luminance}")
         trainloader, testloader = dataset_load(dataset_name=dataset_name)
         color_trans = Color_space_transform(color_space_name=color_space_name, peak_luminance=peak_luminance)
