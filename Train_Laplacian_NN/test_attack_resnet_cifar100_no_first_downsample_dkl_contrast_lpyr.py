@@ -15,7 +15,7 @@ import torch.nn.functional as F
 pyr_levels = 4
 peak_luminance = 100.0
 resolution = [32, 32]
-diagonal_size_inches = 5
+diagonal_size_inches = 50.0
 viewing_distance_meters = 1
 ar = resolution[0]/resolution[1]
 height_mm = math.sqrt( (diagonal_size_inches*25.4)**2 / (1+ar**2) )
