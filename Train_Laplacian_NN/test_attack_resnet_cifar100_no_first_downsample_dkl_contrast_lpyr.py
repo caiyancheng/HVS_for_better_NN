@@ -180,10 +180,7 @@ class PyramidResNet18(nn.Module):
         return self.fc(torch.flatten(x, 1))
 
 
-model = resnet18(weights=None)
-model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-model.maxpool = nn.Identity()
-model.fc = nn.Linear(model.fc.in_features, 100)
+model = PyramidResNet18(num_classes=100)
 model = model.to(device)
 model.load_state_dict(torch.load(
 f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_dsi{diagonal_size_inches}_1.pth'
