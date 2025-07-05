@@ -14,10 +14,8 @@ import torch.nn.functional as F
 
 pyr_levels = 4
 peak_luminance = 100.0
-
-
-resolution = [3840,2160]
-diagonal_size_inches = 55
+resolution = [32, 32]
+diagonal_size_inches = 5
 viewing_distance_meters = 1
 ar = resolution[0]/resolution[1]
 height_mm = math.sqrt( (diagonal_size_inches*25.4)**2 / (1+ar**2) )
@@ -25,7 +23,7 @@ display_size_m = (ar*height_mm/1000, height_mm/1000)
 pix_deg = 2 * math.degrees(math.atan(0.5 * display_size_m[0] / resolution[0] / viewing_distance_meters))
 display_ppd = 1 / pix_deg
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-lpyr = laplacian_pyramid_simple_contrast(32, 32, display_ppd, device, contrast='weber_g1')
+lpyr = laplacian_pyramid_simple_contrast(resolution[1], resolution[0], display_ppd, device, contrast='weber_g1')
 
 # --- ✅ DKL转换相关矩阵 ---
 LMS2006_to_DKLd65 = torch.tensor([
@@ -188,7 +186,7 @@ model.maxpool = nn.Identity()
 model.fc = nn.Linear(model.fc.in_features, 100)
 model = model.to(device)
 model.load_state_dict(torch.load(
-f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_1.pth'
+f'../HVS_for_better_NN_pth/best_resnet18_cifar100_dkl_contrast_lpyr_level_{pyr_levels}_pl{peak_luminance}_dsi{diagonal_size_inches}_1.pth'
 ))
 model.eval()
 
