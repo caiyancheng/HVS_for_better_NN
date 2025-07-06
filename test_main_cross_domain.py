@@ -45,7 +45,7 @@ if __name__ == '__main__':
     base_model_dataset = 'CIFAR-100'
     resolution = [32, 32]
     viewing_distance_meters = 1.0
-    diagonal_size_inches_list = [5, 10, 20, 50]
+    diagonal_size_inches_list = [5, 10]#, 20, 50]
 
     corruption_type_list = ['gaussian_noise',  'fog', 'jpeg_compression']
     # corruption_type_list = [
@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
-    peak_luminance_list = [100, 200, 500]
+    peak_luminance_list = [100]#, 200, 500]
 
     log_dir = '../HVS_for_better_NN_logs_cross_domain_test/'
     os.makedirs(log_dir, exist_ok=True)
