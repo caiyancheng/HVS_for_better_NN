@@ -18,7 +18,7 @@ def test_model(model, testloader, device, color_trans):
     correct = 0
     total = 0
     with torch.no_grad():
-        for inputs, targets in testloader:
+        for inputs, targets in tqdm(testloader, desc='Testing'):
             inputs, targets = inputs.to(device), targets.to(device)
             if color_trans is not None:
                 inputs = color_trans(inputs)
@@ -30,28 +30,33 @@ def test_model(model, testloader, device, color_trans):
     return acc
 
 if __name__ == '__main__':
-    test_dataset_name_list = ['CIFAR-100']
+    dataset_name = 'CIFAR-100-C'
+    corruption_type_list = [
+        'gaussian_noise', 'shot_noise', 'impulse_noise', 'defocus_blur', 'glass_blur',
+        'motion_blur', 'zoom_blur', 'snow', 'frost', 'fog', 'brightness',
+        'contrast', 'elastic_transform', 'pixelate', 'jpeg_compression'
+    ]
+    severity_list = [1, 2, 3, 4, 5]  # 多个严重等级
+
     model_name_list = ['resnet18']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100, 200, 500]
 
-    for dataset_name, model_name, color_space_name, peak_luminance in itertools.product(
-        test_dataset_name_list, model_name_list, color_space_name_list, peak_luminance_list):
+    for model_name, color_space_name, peak_luminance, corruption_type, severity in itertools.product(
+        model_name_list, color_space_name_list, peak_luminance_list, corruption_type_list, severity_list):
 
-        print(f"🔍 Testing: Dataset={dataset_name}, Model={model_name}, Color={color_space_name}, Peak L={peak_luminance}")
+        print(f"🔍 Testing: Dataset={dataset_name}, Corruption={corruption_type}, Severity={severity}, "
+              f"Model={model_name}, Color={color_space_name}, Peak L={peak_luminance}")
 
-        # 加载数据集
-        testloader = dataset_load(dataset_name=dataset_name, type='test')
+        testloader = dataset_load(dataset_name=dataset_name, type='test',
+                                  corruption_type=corruption_type, severity=severity)
 
-        # 加载颜色变换模块
         color_trans = Color_space_transform(color_space_name=color_space_name, peak_luminance=peak_luminance)
 
-        # 创建模型
-        model = model_create(model_name=model_name, dataset_name=dataset_name)
+        model = model_create(model_name=model_name, dataset_name='CIFAR-100')
         model.to(device)
 
-        # 加载训练好的模型参数
-        model_path = f'../HVS_for_better_NN_pth_2/best_{model_name}_{dataset_name}_{color_space_name}_pl{peak_luminance}.pth'
+        model_path = f'../HVS_for_better_NN_pth_2/best_{model_name}_CIFAR-100_{color_space_name}_pl{peak_luminance}.pth'
         if os.path.exists(model_path):
             model.load_state_dict(torch.load(model_path, map_location=device))
             print(f"✅ Loaded model from {model_path}")
@@ -59,6 +64,5 @@ if __name__ == '__main__':
             print(f"❌ Model checkpoint not found: {model_path}")
             continue
 
-        # 测试模型
         acc = test_model(model, testloader, device, color_trans)
-        print(f"🎯 Final Test Accuracy: {acc:.2f}%\n")
+        print(f"🎯 Test Accuracy on {corruption_type} (severity {severity}): {acc:.2f}%\n")
