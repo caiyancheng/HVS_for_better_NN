@@ -65,7 +65,7 @@ if __name__ == '__main__':
     model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100] #, 200, 500]
-    diagonal_size_inches_list = [10] #[5, 10, 20, 50]
+    diagonal_size_inches_list = [5, 10] #[5, 10, 20, 50]
     resolution = [32, 32]
     viewing_distance_meters = 1
     eps_list = [0.02]#[0.01, 0.02, 0.05]
