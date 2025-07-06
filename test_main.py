@@ -38,7 +38,7 @@ def test_model(model, testloader, device, color_trans):
 
 if __name__ == '__main__':
     dataset_name = 'CIFAR-100'
-    model_name_list = ['resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
+    model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name = 'DKL_linear'
     peak_luminance_list = [100, 200, 500]
     diagonal_size_inches_list = [5, 10, 20, 50]
