@@ -59,12 +59,12 @@ if __name__ == '__main__':
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100, 200, 500]
 
+    log_dir = '../HVS_for_better_NN_logs_cross_domain_test/'
+    os.makedirs(log_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{timestamp}.txt')
+    log_file = open(log_file_path, 'w')
     if save_csv:
-        log_dir = '../HVS_for_better_NN_logs_cross_domain_test/'
-        os.makedirs(log_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{timestamp}.txt')
-        log_file = open(log_file_path, 'w')
         # ✅ 存储所有结果的字典
         results_dict = {}
 
