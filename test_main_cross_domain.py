@@ -40,6 +40,7 @@ def test_model(model, testloader, device, color_trans):
     return 100. * correct / total
 
 if __name__ == '__main__':
+    save_csv = False
     dataset_name = 'CIFAR-100-C'
     base_model_dataset = 'CIFAR-100'
     resolution = [32, 32]
@@ -58,14 +59,14 @@ if __name__ == '__main__':
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100, 200, 500]
 
-    log_dir = '../HVS_for_better_NN_logs_cross_domain_test/'
-    os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{timestamp}.txt')
-    log_file = open(log_file_path, 'w')
-
-    # ✅ 存储所有结果的字典
-    results_dict = {}
+    if save_csv:
+        log_dir = '../HVS_for_better_NN_logs_cross_domain_test/'
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{timestamp}.txt')
+        log_file = open(log_file_path, 'w')
+        # ✅ 存储所有结果的字典
+        results_dict = {}
 
     for model_name in model_name_list:
         if model_name == 'resnet18':
@@ -104,8 +105,9 @@ if __name__ == '__main__':
 
                 model.load_state_dict(torch.load(model_path))
 
-                row_key = f'{model_name}_{color_space_name}_pl{peak_luminance}'
-                results_dict[row_key] = {}
+                if save_csv:
+                    row_key = f'{model_name}_{color_space_name}_pl{peak_luminance}'
+                    results_dict[row_key] = {}
 
                 for corruption_type, severity in itertools.product(corruption_type_list, severity_list):
                     print(f"\n🔍 Testing: Model={model_name}, Dataset={dataset_name}, Corruption={corruption_type}, "
@@ -128,18 +130,20 @@ if __name__ == '__main__':
                     log_file.flush()
 
                     # ✅ 存入结果表
-                    results_dict[row_key][corruption_type] = acc
-                    csv_output_path = os.path.join(log_dir, f'corruption_results_{timestamp}_middle.csv')
-                    df = pd.DataFrame.from_dict(results_dict, orient='index')
-                    df = df[corruption_type_list]  # 确保列顺序一致
-                    df.to_csv(csv_output_path)
-                    print(f"\n✅ Results saved to {csv_output_path}")
+                    if save_csv:
+                        results_dict[row_key][corruption_type] = acc
+                        csv_output_path = os.path.join(log_dir, f'corruption_results_{timestamp}_middle.csv')
+                        df = pd.DataFrame.from_dict(results_dict, orient='index')
+                        df = df[corruption_type_list]  # 确保列顺序一致
+                        df.to_csv(csv_output_path)
+                        print(f"\n✅ Results saved to {csv_output_path}")
 
     log_file.close()
 
-    # ✅ 将结果写入CSV表格
-    csv_output_path = os.path.join(log_dir, f'corruption_results_{timestamp}_final.csv')
-    df = pd.DataFrame.from_dict(results_dict, orient='index')
-    df = df[corruption_type_list]  # 确保列顺序一致
-    df.to_csv(csv_output_path)
-    print(f"\n✅ Results saved to {csv_output_path}")
+    if save_csv:
+        # ✅ 将结果写入CSV表格
+        csv_output_path = os.path.join(log_dir, f'corruption_results_{timestamp}_final.csv')
+        df = pd.DataFrame.from_dict(results_dict, orient='index')
+        df = df[corruption_type_list]  # 确保列顺序一致
+        df.to_csv(csv_output_path)
+        print(f"\n✅ Results saved to {csv_output_path}")
