@@ -152,6 +152,10 @@ if __name__ == '__main__':
                         log_path = (f'../HVS_for_better_NN_logs/'
                                     f'log_{model_name}_{dataset_name}_{color_space_name}_pl{peak_luminance}_'
                                     f'diag{diagonal_size_inches}.txt')
+                        # 如果日志文件存在，说明训练已经完成，跳过
+                        if os.path.exists(log_path):
+                            print(f"🚫 Skipping: already trained — {log_path}")
+                            continue
 
                         os.makedirs(os.path.dirname(save_path), exist_ok=True)
                         os.makedirs(os.path.dirname(log_path), exist_ok=True)
