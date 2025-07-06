@@ -4,6 +4,7 @@ import torch.nn as nn
 import math
 from tqdm import tqdm
 import itertools
+import pandas as pd  # ✅ 新增
 from dataset_load import dataset_load
 from model_zoo import model_create
 from set_random_seed import set_seed
@@ -45,12 +46,13 @@ if __name__ == '__main__':
     viewing_distance_meters = 1.0
     diagonal_size_inches_list = [5, 10, 20, 50]
 
-    corruption_type_list = [
-        'gaussian_noise', 'shot_noise', 'impulse_noise', 'defocus_blur', 'glass_blur',
-        'motion_blur', 'zoom_blur', 'snow', 'frost', 'fog', 'brightness',
-        'contrast', 'elastic_transform', 'pixelate', 'jpeg_compression'
-    ]
-    severity_list = [1, 2, 3, 4, 5]
+    corruption_type_list = ['gaussian_noise',  'fog', 'jpeg_compression']
+    # corruption_type_list = [
+    #     'gaussian_noise', 'shot_noise', 'impulse_noise', 'defocus_blur', 'glass_blur',
+    #     'motion_blur', 'zoom_blur', 'snow', 'frost', 'fog', 'brightness',
+    #     'contrast', 'elastic_transform', 'pixelate', 'jpeg_compression'
+    # ]
+    severity_list = [5]
 
     model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
@@ -61,6 +63,9 @@ if __name__ == '__main__':
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{timestamp}.txt')
     log_file = open(log_file_path, 'w')
+
+    # ✅ 存储所有结果的字典
+    results_dict = {}
 
     for model_name in model_name_list:
         if model_name == 'resnet18':
@@ -99,6 +104,9 @@ if __name__ == '__main__':
 
                 model.load_state_dict(torch.load(model_path))
 
+                row_key = f'{model_name}_{color_space_name}_pl{peak_luminance}'
+                results_dict[row_key] = {}
+
                 for corruption_type, severity in itertools.product(corruption_type_list, severity_list):
                     print(f"\n🔍 Testing: Model={model_name}, Dataset={dataset_name}, Corruption={corruption_type}, "
                           f"Severity={severity}, Color={color_space_name}, Peak L={peak_luminance}, Diagonal={diagonal_size_inches}\"")
@@ -119,4 +127,19 @@ if __name__ == '__main__':
                     log_file.write(log_line)
                     log_file.flush()
 
+                    # ✅ 存入结果表
+                    results_dict[row_key][corruption_type] = acc
+                    csv_output_path = os.path.join(log_dir, f'corruption_results_{timestamp}_middle.csv')
+                    df = pd.DataFrame.from_dict(results_dict, orient='index')
+                    df = df[corruption_type_list]  # 确保列顺序一致
+                    df.to_csv(csv_output_path)
+                    print(f"\n✅ Results saved to {csv_output_path}")
+
     log_file.close()
+
+    # ✅ 将结果写入CSV表格
+    csv_output_path = os.path.join(log_dir, f'corruption_results_{timestamp}_final.csv')
+    df = pd.DataFrame.from_dict(results_dict, orient='index')
+    df = df[corruption_type_list]  # 确保列顺序一致
+    df.to_csv(csv_output_path)
+    print(f"\n✅ Results saved to {csv_output_path}")
