@@ -147,6 +147,50 @@ class ResNet18_lpyr(nn.Module):
         x = self.avgpool(x)
         return self.fc(torch.flatten(x, 1))
 
+class ResNet18_lpyr_2(nn.Module):
+    def __init__(self, num_classes=10):
+        super().__init__()
+        base = resnet18(weights=None)
+        base.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)  # 输入 concat image + L0
+        base.maxpool = nn.Identity()
+
+        self.conv1 = base.conv1
+        self.bn1 = base.bn1
+        self.relu = base.relu
+        self.maxpool = base.maxpool
+        self.layer1 = base.layer1
+        self.layer2 = base.layer2
+        self.layer3 = base.layer3
+        self.layer4 = base.layer4
+        self.avgpool = base.avgpool
+        self.fc = nn.Linear(base.fc.in_features, num_classes)
+
+        self.inject1 = nn.Conv2d(3, 64, 1)  # 将pyr[1]编码为 gating
+        self.inject2 = nn.Conv2d(3, 64, 1)
+        self.inject3 = nn.Conv2d(3, 128, 1)
+
+        self.gate = nn.Sigmoid()
+
+    def set_lpyr(self, lpyr, pyr_levels):
+        self.lpyr = lpyr
+        self.pyr_levels = pyr_levels
+
+    def forward(self, x):
+        _, pyr = self.lpyr.decompose(x, levels=self.pyr_levels)
+        x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
+        feat1 = self.inject1(F.interpolate(pyr[0], size=x.shape[-2:]))
+        alpha1 = self.gate(feat1)
+        x = self.layer1(x * alpha1)
+        feat2 = self.inject2(F.interpolate(pyr[1], size=x.shape[-2:]))
+        alpha2 = self.gate(feat2)
+        x = self.layer2(x * alpha2)
+        feat3 = self.inject3(F.interpolate(pyr[2], size=x.shape[-2:]))
+        alpha3 = self.gate(feat3)
+        x = self.layer3(x * alpha3)
+        x = self.layer4(x)
+        x = self.avgpool(x)
+        return self.fc(torch.flatten(x, 1))
+
 
 class ResNet18_clpyr(nn.Module):
     def __init__(self, num_classes=10):
@@ -370,6 +414,12 @@ def model_create(model_name, dataset_name):
             model = ResNet18_lpyr(num_classes=100)
         elif dataset_name == 'CIFAR-10':
             model = ResNet18_lpyr(num_classes=10)
+        return model
+    elif model_name == 'resnet18-lpyr-2':
+        if dataset_name == 'CIFAR-100':
+            model = ResNet18_lpyr_2(num_classes=100)
+        elif dataset_name == 'CIFAR-10':
+            model = ResNet18_lpyr_2(num_classes=10)
         return model
     elif model_name == 'resnet18-clpyr':
         if dataset_name == 'CIFAR-100':
