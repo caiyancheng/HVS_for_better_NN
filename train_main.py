@@ -139,7 +139,7 @@ if __name__ == '__main__':
                         if model_name.endswith('-clpyr') or model_name.endswith('-clpyr-CSF') or model_name.endswith('-clpyr-CM-transducer'):
                             lpyr = laplacian_pyramid_simple_contrast(resolution[1], resolution[0], display_ppd, device, contrast='weber_g1')
                             model.set_lpyr(lpyr=lpyr, pyr_levels=4)
-                        if model_name.endswith('-lpyr'):
+                        if model_name.endswith('-lpyr') or model_name.endswith('-lpyr-2'):
                             lpyr = laplacian_pyramid_simple(resolution[1], resolution[0], display_ppd, device)
                             model.set_lpyr(lpyr=lpyr, pyr_levels=4)
 
