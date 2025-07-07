@@ -53,7 +53,7 @@ if __name__ == '__main__':
     #     'motion_blur', 'zoom_blur', 'snow', 'frost', 'fog', 'brightness',
     #     'contrast', 'elastic_transform', 'pixelate', 'jpeg_compression'
     # ]
-    severity_list = [5]
+    severity_list = [2]
 
     model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
