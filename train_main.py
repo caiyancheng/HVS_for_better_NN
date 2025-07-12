@@ -97,7 +97,7 @@ def train_model(rank, world_size, args):
 
     model = args['model']
     model.to(device)
-    model = DDP(model, device_ids=[0])
+    model = DDP(model, device_ids=[rank])
 
     optimizer = args['optimizer']
     scheduler = args['scheduler']
@@ -159,6 +159,7 @@ if __name__ == '__main__':
     diagonal_size_inches_list = [10, 20, 50] #5
     resolution = [64, 64]
     viewing_distance_meters = 1
+    # batch_size = 128 * 8
 
     gpu_ids = [0, 1]
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(x) for x in gpu_ids)
