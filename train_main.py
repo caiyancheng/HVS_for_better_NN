@@ -1,4 +1,5 @@
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"  # 只用 GPU 0 和 GPU 1
 import numpy as np
 import torch.optim as optim
 import torch.nn as nn
@@ -7,7 +8,7 @@ import itertools
 from model_zoo import model_create
 from set_random_seed import set_seed
 set_seed(66)
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 from color_space_transform import Color_space_transform
 from tqdm import tqdm
 import math
@@ -76,7 +77,7 @@ def train_model(model, trainloader, testloader, optimizer, scheduler, criterion,
         old_stdout = sys.stdout
         sys.stdout = tee
         try:
-            summary(model, input_size=(3, resolution[0], resolution[1]))
+            summary(model.module if isinstance(model, nn.DataParallel) else model, input_size=(3, resolution[0], resolution[1]))
         finally:
             sys.stdout = old_stdout
         log_file.write(buf.getvalue())
@@ -94,7 +95,7 @@ def train_model(model, trainloader, testloader, optimizer, scheduler, criterion,
             if acc > best_acc:
                 best_acc = acc
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                torch.save(model.state_dict(), save_path)
+                torch.save(model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict(), save_path)
                 print(f"✅ Saved best model with accuracy {best_acc:.2f}%")
                 log_file.write(f"Saved best model with accuracy {best_acc:.2f}%\n")
 
@@ -147,6 +148,10 @@ if __name__ == '__main__':
                         if model_name.endswith('-lpyr') or model_name.endswith('-lpyr-2'):
                             lpyr = laplacian_pyramid_simple(resolution[1], resolution[0], display_ppd, device)
                             model.set_lpyr(lpyr=lpyr, pyr_levels=4)
+
+                        if torch.cuda.device_count() > 1:
+                            print(f"🔧 Using {torch.cuda.device_count()} GPUs: {torch.cuda.get_device_name(0)}, {torch.cuda.get_device_name(1)}")
+                            model = nn.DataParallel(model, device_ids=[0, 1])
 
                         optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
                         scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
