@@ -52,26 +52,26 @@ class CIFAR100C(Dataset):
     def __len__(self):
         return len(self.data)
 
-def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', severity=1, num_classes=None):
+def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='gaussian_noise', severity=1, num_classes=None):
     data_root = r'../Datasets/CIFAR10/data'
     if dataset_name == 'CIFAR-100':
         if type == 'train':
             trainset = torchvision.datasets.CIFAR100(root=data_root, train=True, download=False, transform=transform_train)
-            trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+            trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=4)
             return trainloader
         elif type == 'test':
             testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=False, transform=transform_test)
-            testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
+            testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=4)
             return testloader
 
     elif dataset_name == 'CIFAR-10':
         if type == 'train':
             trainset = torchvision.datasets.CIFAR10(root=data_root, train=True, download=False, transform=transform_train)
-            trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+            trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=4)
             return trainloader
         elif type == 'test':
             testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=False, transform=transform_test)
-            testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
+            testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=4)
             return testloader
 
     elif dataset_name == 'CIFAR-100-C' and type == 'test':
@@ -80,7 +80,7 @@ def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', s
                             corruption_type=corruption_type,
                             severity=severity,
                             transform=transform_test)
-        testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
+        testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=4)
         return testloader
 
     elif dataset_name == 'Tiny-ImageNet':
@@ -117,7 +117,7 @@ def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', s
             selected_idx = [i for i, (img, label) in enumerate(dataset.samples) if
                             dataset.classes[label] in selected_classes]
             dataset = Subset(dataset, selected_idx)
-        dataloader = DataLoader(dataset, batch_size=128 if type == 'train' else 100, shuffle=(type == 'train'),
+        dataloader = DataLoader(dataset, batch_size=batch_size if type == 'train' else 100, shuffle=(type == 'train'),
                                 num_workers=4)
         return dataloader
     else:
