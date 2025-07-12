@@ -106,14 +106,17 @@ def train_ddp(rank, world_size, gpus_to_use):
                         if rank == 0:
                             print(f"Dataset: {dataset_name}, Model: {model_name}, Color Space: {color_space_name}, "
                                   f"Peak Luminance: {peak_luminance}, Diagonal: {diagonal_size_inches} inches")
-
-                        trainset = dataset_load(dataset_name=dataset_name, type='train')
-                        testset = dataset_load(dataset_name=dataset_name, type='test')
+                        if dataset_name == 'Tiny-ImageNet':
+                            trainset = dataset_load(dataset_name=dataset_name, type='train')
+                            testset = dataset_load(dataset_name=dataset_name, type='test')
+                        else:
+                            trainset = dataset_load(dataset_name=dataset_name, type='train')
+                            testset = dataset_load(dataset_name=dataset_name, type='test')
                         train_sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank)
                         test_sampler = DistributedSampler(testset, num_replicas=world_size, rank=rank, shuffle=False)
 
-                        trainloader = torch.utils.data.DataLoader(trainset, sampler=train_sampler, batch_size=128, num_workers=4, pin_memory=True)
-                        testloader = torch.utils.data.DataLoader(testset, sampler=test_sampler, batch_size=128, num_workers=4, pin_memory=True)
+                        trainloader = torch.utils.data.DataLoader(trainset, sampler=train_sampler, batch_size=128*8, num_workers=4, pin_memory=True)
+                        testloader = torch.utils.data.DataLoader(testset, sampler=test_sampler, batch_size=128*8, num_workers=4, pin_memory=True)
 
                         color_trans = Color_space_transform(color_space_name=color_space_name, peak_luminance=peak_luminance)
                         model = model_create(model_name=model_name, dataset_name=dataset_name).to(device)
