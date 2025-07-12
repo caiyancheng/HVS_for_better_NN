@@ -1,10 +1,13 @@
 import numpy as np
 import torch
 import torchvision
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Subset
 import torchvision.transforms as transforms
 from PIL import Image
 import os
+from torchvision.datasets import ImageFolder
+from collections import defaultdict
+from torchvision import datasets
 
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
@@ -49,15 +52,13 @@ class CIFAR100C(Dataset):
     def __len__(self):
         return len(self.data)
 
-def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', severity=1):
+def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', severity=1, num_classes=None):
     data_root = r'../Datasets/CIFAR10/data'
     if dataset_name == 'CIFAR-100':
         if type == 'train':
             trainset = torchvision.datasets.CIFAR100(root=data_root, train=True, download=False, transform=transform_train)
             trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
-            testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=False, transform=transform_test)
-            testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
-            return trainloader, testloader
+            return trainloader
         elif type == 'test':
             testset = torchvision.datasets.CIFAR100(root=data_root, train=False, download=False, transform=transform_test)
             testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
@@ -67,15 +68,13 @@ def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', s
         if type == 'train':
             trainset = torchvision.datasets.CIFAR10(root=data_root, train=True, download=False, transform=transform_train)
             trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
-            testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=False, transform=transform_test)
-            testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
-            return trainloader, testloader
+            return trainloader
         elif type == 'test':
             testset = torchvision.datasets.CIFAR10(root=data_root, train=False, download=False, transform=transform_test)
             testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
             return testloader
 
-    elif dataset_name == 'CIFAR-100-C':
+    elif dataset_name == 'CIFAR-100-C' and type == 'test':
         corruption_root = r'../Datasets/CIFAR100-C'
         testset = CIFAR100C(corruption_root=corruption_root,
                             corruption_type=corruption_type,
@@ -83,3 +82,43 @@ def dataset_load(dataset_name, type='train', corruption_type='gaussian_noise', s
                             transform=transform_test)
         testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=4)
         return testloader
+
+    elif dataset_name == 'Tiny-ImageNet':
+        tiny_root = '../Datasets/tiny-imagenet-200'
+        # tiny_root = r'E:\Datasets\tiny-imagenet-200\tiny-imagenet-200'
+        split = 'train' if type == 'train' else 'val'
+        # Tiny-ImageNet has a special structure, need to restructure val set
+        if split == 'val':
+            val_dir = os.path.join(tiny_root, 'val')
+            val_img_dir = os.path.join(val_dir, 'images')
+            val_annotations_file = os.path.join(val_dir, 'val_annotations.txt')
+            # Create class-based subfolders if not already done
+            class_to_files = defaultdict(list)
+            with open(val_annotations_file, 'r') as f:
+                for line in f:
+                    filename, classname, *_ = line.strip().split('\t')
+                    class_to_files[classname].append(filename)
+            for classname, files in class_to_files.items():
+                class_dir = os.path.join(val_img_dir, classname)
+                os.makedirs(class_dir, exist_ok=True)
+                for fname in files:
+                    src = os.path.join(val_img_dir, fname)
+                    dst = os.path.join(class_dir, fname)
+                    if not os.path.exists(dst):
+                        os.link(src, dst)
+            data_dir = val_img_dir  # reorganized val folder
+        else:
+            data_dir = os.path.join(tiny_root, 'train')
+        dataset = datasets.ImageFolder(data_dir, transform=transform_train if type == 'train' else transform_test)
+        # Restrict to first `num_classes` if specified
+        if num_classes is not None:
+            class_indices = {cls: idx for idx, cls in enumerate(sorted(dataset.classes))}
+            selected_classes = set(list(class_indices.keys())[:num_classes])
+            selected_idx = [i for i, (img, label) in enumerate(dataset.samples) if
+                            dataset.classes[label] in selected_classes]
+            dataset = Subset(dataset, selected_idx)
+        dataloader = DataLoader(dataset, batch_size=128 if type == 'train' else 100, shuffle=(type == 'train'),
+                                num_workers=4)
+        return dataloader
+    else:
+        raise ValueError('Invalid dataset_name')

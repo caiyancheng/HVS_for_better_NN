@@ -408,36 +408,48 @@ def model_create(model_name, dataset_name):
             model.fc = nn.Linear(model.fc.in_features, 100)
         elif dataset_name == 'CIFAR-10':
             model.fc = nn.Linear(model.fc.in_features, 10)
+        elif dataset_name == 'Tiny-ImageNet':
+            model.fc = nn.Linear(model.fc.in_features, 200)
         return model
     elif model_name == 'resnet18-lpyr':
         if dataset_name == 'CIFAR-100':
             model = ResNet18_lpyr(num_classes=100)
         elif dataset_name == 'CIFAR-10':
             model = ResNet18_lpyr(num_classes=10)
+        elif dataset_name == 'Tiny-ImageNet':
+            model = ResNet18_lpyr(num_classes=200)
         return model
     elif model_name == 'resnet18-lpyr-2':
         if dataset_name == 'CIFAR-100':
             model = ResNet18_lpyr_2(num_classes=100)
         elif dataset_name == 'CIFAR-10':
             model = ResNet18_lpyr_2(num_classes=10)
+        elif dataset_name == 'Tiny-ImageNet':
+            model = ResNet18_lpyr_2(num_classes=200)
         return model
     elif model_name == 'resnet18-clpyr':
         if dataset_name == 'CIFAR-100':
             model = ResNet18_clpyr(num_classes=100)
         elif dataset_name == 'CIFAR-10':
             model = ResNet18_clpyr(num_classes=10)
+        elif dataset_name == 'Tiny-ImageNet':
+            model = ResNet18_clpyr(num_classes=200)
         return model
     elif model_name == 'resnet18-clpyr-CSF':
         if dataset_name == 'CIFAR-100':
             model = ResNet18_clpyr_CSF(num_classes=100)
         elif dataset_name == 'CIFAR-10':
             model = ResNet18_clpyr_CSF(num_classes=10)
+        elif dataset_name == 'Tiny-ImageNet':
+            model = ResNet18_clpyr_CSF(num_classes=200)
         return model
     elif model_name == 'resnet18-clpyr-CM-transducer':
         if dataset_name == 'CIFAR-100':
             model = ResNet18_clpyr_masking_transducer(num_classes=100)
         elif dataset_name == 'CIFAR-10':
             model = ResNet18_clpyr_masking_transducer(num_classes=10)
+        elif dataset_name == 'Tiny-ImageNet':
+            model = ResNet18_clpyr_masking_transducer(num_classes=200)
         return model
     else:
         raise NotImplementedError('The setting is not implemented.')

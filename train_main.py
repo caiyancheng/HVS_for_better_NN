@@ -67,7 +67,7 @@ def test_one_epoch(model, testloader, device, epoch, color_trans):
     print(f"[Epoch {epoch}] Test Accuracy: {acc:.2f}%")
     return acc
 
-def train_model(model, trainloader, testloader, optimizer, scheduler, criterion, device, save_path, color_trans, log_file_path, max_epochs=100):
+def train_model(model, trainloader, testloader, optimizer, scheduler, criterion, device, save_path, color_trans, log_file_path, resolution, max_epochs=100):
     best_acc = 0.0
     os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
     with open(log_file_path, 'w') as log_file:
@@ -76,7 +76,7 @@ def train_model(model, trainloader, testloader, optimizer, scheduler, criterion,
         old_stdout = sys.stdout
         sys.stdout = tee
         try:
-            summary(model, input_size=(3, 32, 32))
+            summary(model, input_size=(3, resolution[0], resolution[1]))
         finally:
             sys.stdout = old_stdout
         log_file.write(buf.getvalue())
@@ -99,13 +99,13 @@ def train_model(model, trainloader, testloader, optimizer, scheduler, criterion,
                 log_file.write(f"Saved best model with accuracy {best_acc:.2f}%\n")
 
 if __name__ == '__main__':
-    train_dataset_name_list = ['CIFAR-100']
+    train_dataset_name_list = ['Tiny-ImageNet'] #'CIFAR-100']#,
     # model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-lpyr-2', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100, 200, 500]
-    diagonal_size_inches_list = [5, 10, 20, 50]
-    resolution = [32, 32]
+    diagonal_size_inches_list = [10, 20, 50] #5
+    resolution = [64, 64]
     viewing_distance_meters = 1
 
     for dataset_name in train_dataset_name_list:
@@ -130,7 +130,12 @@ if __name__ == '__main__':
                         print(f"Dataset: {dataset_name}, Model: {model_name}, Color Space: {color_space_name}, "
                               f"Peak Luminance: {peak_luminance}, Diagonal: {diagonal_size_inches} inches")
 
-                        trainloader, testloader = dataset_load(dataset_name=dataset_name)
+                        if dataset_name == 'Tiny-ImageNet':
+                            trainloader = dataset_load(dataset_name=dataset_name, type='train')
+                            testloader = dataset_load(dataset_name=dataset_name, type='test')
+                        else:
+                            trainloader = dataset_load(dataset_name=dataset_name, type='train')
+                            testloader = dataset_load(dataset_name=dataset_name, type='test')
                         color_trans = Color_space_transform(color_space_name=color_space_name,
                                                             peak_luminance=peak_luminance)
                         model = model_create(model_name=model_name, dataset_name=dataset_name)
@@ -172,6 +177,7 @@ if __name__ == '__main__':
                                 save_path=save_path,
                                 color_trans=color_trans,
                                 log_file_path=log_path,
+                                resolution=resolution,
                                 max_epochs=100
                             )
                         except Exception as e:
