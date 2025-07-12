@@ -160,7 +160,7 @@ if __name__ == '__main__':
     resolution = [64, 64]
     viewing_distance_meters = 1
 
-    gpu_ids = [0, 2]
+    gpu_ids = [0, 1]
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(x) for x in gpu_ids)
     world_size = len(gpu_ids)
 
