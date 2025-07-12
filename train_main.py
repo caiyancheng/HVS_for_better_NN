@@ -81,12 +81,7 @@ def test_one_epoch(model, testloader, device, epoch, color_trans):
 
 def train_model(rank, world_size, args):
     setup(rank, world_size)
-
-    # 绑定对应真实物理GPU
-    gpu_ids = [0, 2]
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_ids[rank])
-    torch.cuda.set_device(0)  # 当前进程可见的设备是0号设备（映射后）
-    device = torch.device("cuda:0")
+    device = torch.device(f"cuda:{rank}")
 
     # 分布式采样
     trainloader = args['trainloader']
@@ -165,7 +160,9 @@ if __name__ == '__main__':
     resolution = [64, 64]
     viewing_distance_meters = 1
 
-    world_size = 2  # 两个GPU 0和2
+    gpu_ids = [0, 2]
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(x) for x in gpu_ids)
+    world_size = len(gpu_ids)
 
     for dataset_name in train_dataset_name_list:
         for model_name in model_name_list:
