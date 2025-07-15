@@ -49,6 +49,7 @@ if __name__ == '__main__':
     diagonal_size_inches_list = [10, 20, 50]
     resolution = [64, 64]
     viewing_distance_meters = 1
+    batch_size = 128 * 8
 
     for dataset_name in train_dataset_name_list:
         for model_name in model_name_list:
@@ -67,14 +68,14 @@ if __name__ == '__main__':
 
                 for diagonal_size_inches in diagonal_iter:
                     for peak_luminance in luminance_iter:
-                        print(f"Testing: Model={model_name}, Dataset={dataset_name}, Color={color_space_name}, "
-                              f"PeakL={peak_luminance}, Diagonal={diagonal_size_inches}")
+                        print(f"Dataset: {dataset_name}, Model: {model_name}, Color Space: {color_space_name}, "
+                              f"Peak Luminance: {peak_luminance}, Diagonal: {diagonal_size_inches} inches")
 
                         display_ppd = compute_ppd(resolution, diagonal_size_inches, viewing_distance_meters)
                         set_seed(66)
 
                         # 数据集和颜色变换
-                        _, testloader = dataset_load(dataset_name=dataset_name)
+                        testloader = dataset_load(dataset_name=dataset_name, type='test', batch_size=batch_size)
                         color_trans = Color_space_transform(color_space_name=color_space_name,
                                                             peak_luminance=peak_luminance)
 
