@@ -102,8 +102,8 @@ def train_model(model, trainloader, testloader, optimizer, scheduler, criterion,
 if __name__ == '__main__':
     train_dataset_name_list = ['Tiny-ImageNet'] #'CIFAR-100']#,
     # model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
-    # model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-lpyr-2', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
-    model_name_list = ['resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
+    model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-lpyr-2', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
+    # model_name_list = ['resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100, 200, 500]
     diagonal_size_inches_list = [10, 20, 50] #5
