@@ -41,11 +41,14 @@ def test_model(model, testloader, device, color_trans):
 
 if __name__ == '__main__':
     save_csv = False
-    dataset_name = 'CIFAR-100-C'
-    base_model_dataset = 'CIFAR-100'
-    resolution = [32, 32]
+    # dataset_name = 'CIFAR-100-C'
+    # base_model_dataset = 'CIFAR-100'
+    # resolution = [32, 32]
+    dataset_name = 'Tiny-ImageNet-C'
+    base_model_dataset = 'Tiny-ImageNet'
+    resolution = [64, 64]
     viewing_distance_meters = 1.0
-    diagonal_size_inches_list = [5, 10]#, 20, 50]
+    diagonal_size_inches_list = [10]#, 20, 50]
 
     corruption_type_list = ['gaussian_noise',  'fog', 'jpeg_compression']
     # corruption_type_list = [
@@ -62,7 +65,7 @@ if __name__ == '__main__':
     log_dir = '../HVS_for_better_NN_logs_cross_domain_test/'
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{timestamp}.txt')
+    log_file_path = os.path.join(log_dir, f'cross_domain_test_log_{dataset_name}_{timestamp}.txt')
     log_file = open(log_file_path, 'w')
     if save_csv:
         # ✅ 存储所有结果的字典

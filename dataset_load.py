@@ -52,6 +52,37 @@ class CIFAR100C(Dataset):
     def __len__(self):
         return len(self.data)
 
+class TinyImageNetC(Dataset):
+    def __init__(self, corruption_root, corruption_type='gaussian_noise', severity=1, transform=None):
+        """
+        corruption_root: path to the directory containing Tiny-ImageNet-C
+        corruption_type: one of the corruptions (must match the .npy filename)
+        severity: 1-5
+        """
+        assert 1 <= severity <= 5, "Severity should be in [1, 5]"
+        self.transform = transform
+
+        corruption_path = os.path.join(corruption_root, corruption_type + '.npy')
+        label_path = os.path.join(corruption_root, 'labels.npy')
+
+        self.data = np.load(corruption_path)
+        self.targets = np.load(label_path)
+
+        start = (severity - 1) * 10000
+        end = severity * 10000
+        self.data = self.data[start:end]
+        self.targets = self.targets[start:end]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        img = Image.fromarray(self.data[index])
+        if self.transform is not None:
+            img = self.transform(img)
+        target = self.targets[index]
+        return img, target
+
 def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='gaussian_noise', severity=1, num_classes=None):
     data_root = r'../Datasets/CIFAR10/data'
     if dataset_name == 'CIFAR-100':
@@ -80,6 +111,15 @@ def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='ga
                             corruption_type=corruption_type,
                             severity=severity,
                             transform=transform_test)
+        testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=4)
+        return testloader
+
+    elif dataset_name == 'Tiny-ImageNet-C' and type == 'test':
+        corruption_root = r'../Datasets/Tiny-ImageNet-C'
+        testset = TinyImageNetC(corruption_root=corruption_root,
+                                corruption_type=corruption_type,
+                                severity=severity,
+                                transform=transform_test)
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=4)
         return testloader
 
