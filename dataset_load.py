@@ -84,8 +84,9 @@ def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='ga
         return testloader
 
     elif dataset_name == 'Tiny-ImageNet-C' and type == 'test':
-        corruption_root = '../Datasets/Tiny-ImageNet-C'
-        corruption_dir = os.path.join(corruption_root, corruption_type)
+        # corruption_root = '../Datasets/Tiny-ImageNet-C'
+        corruption_root = 'E:\Datasets\Tiny-ImageNet-C\Tiny-ImageNet-C/'
+        corruption_dir = os.path.join(corruption_root, corruption_type, str(severity))
         if not os.path.exists(corruption_dir):
             raise FileNotFoundError(f"Directory {corruption_dir} not found. Please check corruption type and path.")
         dataset = datasets.ImageFolder(corruption_dir, transform=transform_test)
@@ -100,6 +101,7 @@ def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='ga
 
     elif dataset_name == 'Tiny-ImageNet':
         tiny_root = '../Datasets/tiny-imagenet-200'
+        # tiny_root = r'E:\Datasets\tiny-imagenet-200\tiny-imagenet-200'
         # tiny_root = r'E:\Datasets\tiny-imagenet-200\tiny-imagenet-200'
         split = 'train' if type == 'train' else 'val'
         # Tiny-ImageNet has a special structure, need to restructure val set
