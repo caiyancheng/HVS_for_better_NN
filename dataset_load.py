@@ -9,13 +9,6 @@ from torchvision.datasets import ImageFolder
 from collections import defaultdict
 from torchvision import datasets
 
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor()
-])
-
-transform_test = transforms.ToTensor()
 
 class CIFAR100C(Dataset):
     def __init__(self, corruption_root, corruption_type='gaussian_noise', severity=1, transform=None):
@@ -53,6 +46,13 @@ class CIFAR100C(Dataset):
         return len(self.data)
 
 def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='gaussian_noise', severity=1, num_classes=None):
+    transform_train = transforms.Compose([
+        # transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor()
+    ])
+    transform_test = transforms.ToTensor()
+
     data_root = r'../Datasets/CIFAR10/data'
     if dataset_name == 'CIFAR-100':
         if type == 'train':
