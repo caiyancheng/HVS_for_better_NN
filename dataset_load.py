@@ -84,8 +84,8 @@ def dataset_load(dataset_name, batch_size=128, type='train', corruption_type='ga
         return testloader
 
     elif dataset_name == 'Tiny-ImageNet-C' and type == 'test':
-        # corruption_root = '../Datasets/Tiny-ImageNet-C'
-        corruption_root = 'E:\Datasets\Tiny-ImageNet-C\Tiny-ImageNet-C/'
+        corruption_root = '../Datasets/Tiny-ImageNet-C'
+        # corruption_root = 'E:\Datasets\Tiny-ImageNet-C\Tiny-ImageNet-C/'
         corruption_dir = os.path.join(corruption_root, corruption_type, str(severity))
         if not os.path.exists(corruption_dir):
             raise FileNotFoundError(f"Directory {corruption_dir} not found. Please check corruption type and path.")
