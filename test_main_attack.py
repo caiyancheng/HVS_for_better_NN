@@ -61,12 +61,12 @@ def test_attack(model, classifier, x_orig_tensor, y_orig, color_trans, device, e
     return acc_adv
 
 if __name__ == '__main__':
-    dataset_name_list = ['CIFAR-100']
+    dataset_name_list = ['Tiny-ImageNet-C'] #'CIFAR-100']
     model_name_list = ['resnet18', 'resnet18-lpyr', 'resnet18-clpyr', 'resnet18-clpyr-CSF', 'resnet18-clpyr-CM-transducer']
     color_space_name_list = ['sRGB', 'RGB_linear', 'XYZ_linear', 'DKL_linear']
     peak_luminance_list = [100] #, 200, 500]
-    diagonal_size_inches_list = [5, 10] #[5, 10, 20, 50]
-    resolution = [32, 32]
+    diagonal_size_inches_list = [10] #[5, 10, 20, 50]
+    resolution = [64, 64]
     viewing_distance_meters = 1
     eps_list = [0.02]#[0.01, 0.02, 0.05]
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
                             model=model,
                             loss=criterion,
                             clip_values=(0.0, 1.0),
-                            input_shape=(3, 32, 32),
+                            input_shape=(3, resolution[0], resolution[1]),
                             nb_classes=100
                         )
 
